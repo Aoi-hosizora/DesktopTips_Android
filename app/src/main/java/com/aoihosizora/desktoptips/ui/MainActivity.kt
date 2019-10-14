@@ -9,6 +9,7 @@ import android.widget.EditText
 import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
 import com.aoihosizora.desktoptips.model.Tab
+import com.aoihosizora.desktoptips.ui.adapter.TabPageAdapter
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), IContextHelper {

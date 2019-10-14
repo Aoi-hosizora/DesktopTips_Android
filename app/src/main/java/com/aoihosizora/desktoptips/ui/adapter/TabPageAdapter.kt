@@ -1,4 +1,4 @@
-package com.aoihosizora.desktoptips.ui
+package com.aoihosizora.desktoptips.ui.adapter
 
 import android.content.Context
 import android.os.Bundle
@@ -6,6 +6,7 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import com.aoihosizora.desktoptips.model.Global
+import com.aoihosizora.desktoptips.ui.TabFragment
 
 class TabPageAdapter(context: Context, fm: FragmentManager) : FragmentPagerAdapter(fm) {
 

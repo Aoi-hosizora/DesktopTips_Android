@@ -2,11 +2,14 @@ package com.aoihosizora.desktoptips.ui
 
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
+import com.aoihosizora.desktoptips.model.TipItem
+import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.android.synthetic.main.fragment_tab.view.*
 
@@ -28,16 +31,23 @@ class TabFragment : Fragment(), IContextHelper {
     }
 
     /**
-     * 初始化碎片参数，
+     * 初始化碎片参数
      */
     private fun initUI(view: View) {
+        view.list_tipItem.setEmptyView(view.view_empty)
+        view.list_tipItem.layoutManager = LinearLayoutManager(activity)
 
-        view.txt_main.text = if (tabIdx in 0 until Global.tabs.size)
-            "${Global.tabs[tabIdx].title}, ${Global.tabs[tabIdx].tips.size}"
-            else "Not Found"
+        val listAdapter = TipItemAdapter(
+            tipItems =  Global.tabs[tabIdx].tips,
+            onItemClick = { _, tipItem -> run {
+                activity?.showToast("Click: ${tipItem.content}")
+            }},
+            onItemLongClick = { _, tipItem -> run {
+                activity?.showToast("LongClick: ${tipItem.content}")
+                true
+            }}
+        )
 
-        view.btn_main.setOnClickListener {
-            activity?.showAlert(message = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(Global.tabs[tabIdx]), title = "")
-        }
+        view.list_tipItem.adapter = listAdapter
     }
 }

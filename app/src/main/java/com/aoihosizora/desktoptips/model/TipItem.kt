@@ -9,4 +9,5 @@ data class TipItem (
 
     @JsonProperty(value = "IsHighLight", index = 2)
     var highLight: Boolean = false
+
 )

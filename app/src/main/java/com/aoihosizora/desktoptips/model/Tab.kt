@@ -9,6 +9,7 @@ data class Tab (
 
     @JsonProperty(value = "Tips", index = 2)
     var tips: MutableList<TipItem> = mutableListOf()
+
 ) {
     companion object {
 

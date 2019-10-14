@@ -9,15 +9,17 @@
     android:layout_marginTop="@dimen/content_vertical_margin"
     android:layout_marginBottom="@dimen/content_vertical_margin">
 
-    <Button
-        android:id="@+id/btn_main"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <include
+        layout="@layout/view_empty"
+        android:id="@+id/view_empty"
+        android:visibility="gone"/>
 
-    <TextView
-        android:id="@+id/txt_main"
+    <com.aoihosizora.desktoptips.ui.widget.RecyclerViewEmptySupport
+        android:id="@+id/list_tipItem"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center" />
+
+        android:scrollbars="vertical"
+        android:visibility="visible" />
 
 </LinearLayout>
