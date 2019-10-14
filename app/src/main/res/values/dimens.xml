@@ -6,6 +6,7 @@
     <dimen name="content_vertical_margin">16dp</dimen>
 
     <!-- Adapter item margin -->
-    <dimen name="list_item_margin">8dp</dimen>
+    <dimen name="list_item_horizontal_margin">12dp</dimen>
+    <dimen name="list_item_vertical_margin">8dp</dimen>
 
 </resources>

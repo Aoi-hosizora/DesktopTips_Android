@@ -8,10 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
-import com.aoihosizora.desktoptips.model.TipItem
 import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.android.synthetic.main.fragment_tab.view.*
+import android.support.v7.widget.DividerItemDecoration
 
 class TabFragment : Fragment(), IContextHelper {
 
@@ -36,9 +35,12 @@ class TabFragment : Fragment(), IContextHelper {
     private fun initUI(view: View) {
         view.list_tipItem.setEmptyView(view.view_empty)
         view.list_tipItem.layoutManager = LinearLayoutManager(activity)
+        view.list_tipItem.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
 
         val listAdapter = TipItemAdapter(
+            context = context!!,
             tipItems =  Global.tabs[tabIdx].tips,
+            
             onItemClick = { _, tipItem -> run {
                 activity?.showToast("Click: ${tipItem.content}")
             }},
