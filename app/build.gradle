@@ -35,6 +35,9 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
+    // Json
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.7"
+
     // QR Code
     implementation 'com.github.jwkj:LibZXing:v1.1.2'
 }

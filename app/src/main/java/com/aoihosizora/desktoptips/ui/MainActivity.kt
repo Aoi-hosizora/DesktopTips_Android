@@ -9,6 +9,7 @@ import android.view.MenuItem
 import android.widget.EditText
 import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
+import com.aoihosizora.desktoptips.model.Tab
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), IContextHelper {
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
      * 获取数据，更新 Global
      */
     private fun initData() {
+        Global.loadData(this)
         // TODO
     }
 
@@ -145,7 +147,8 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                 if (newTitle.trim().isEmpty()) return@run
 
                 // 非当前标题 && 重复标题
-                if (newTitle != Global.tabTitles[view_pager.currentItem] && Global.tabTitles.indexOf(newTitle) != -1) {
+                if (newTitle != Global.tabTitles[view_pager.currentItem]
+                    && Global.tabTitles.indexOf(newTitle) != -1) {
                     showAlert(title = "重命名分组", message = "分组名 \"$newTitle\" 已存在。")
                     return@run
                 }

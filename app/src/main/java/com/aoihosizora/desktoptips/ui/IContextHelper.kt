@@ -3,6 +3,7 @@ package com.aoihosizora.desktoptips.ui
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
+import android.support.v4.app.Fragment
 import android.view.View
 import android.widget.Toast
 
