@@ -9,7 +9,7 @@ import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
 import kotlinx.android.synthetic.main.fragment_tab.view.*
 
-class TabFragment : Fragment() {
+class TabFragment : Fragment(), IContextHelper {
 
     companion object {
         const val TAB_IDX = "TAB_IDX"

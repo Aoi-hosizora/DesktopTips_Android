@@ -5,5 +5,6 @@
     <!-- Menu -->
     <string name="menu_add_tab">添加分组</string>
     <string name="menu_delete_tab">删除分组</string>
+    <string name="menu_rename_tab">重命名分组</string>
 
 </resources>

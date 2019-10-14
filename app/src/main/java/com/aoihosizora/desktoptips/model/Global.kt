@@ -1,5 +1,7 @@
 package com.aoihosizora.desktoptips.model
 
 object Global {
-    val tabTitles: List<String> = listOf("Test1", "Test2", "Test3", "Test4")
+
+    val tabTitles: MutableList<String> = mutableListOf("Test1", "Test2", "Test3", "Test4")
+
 }
