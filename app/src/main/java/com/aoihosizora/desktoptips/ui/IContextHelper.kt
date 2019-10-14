@@ -1,10 +1,12 @@
 package com.aoihosizora.desktoptips.ui
 
 import android.app.AlertDialog
+import android.app.ProgressDialog
 import android.content.Context
 import android.content.DialogInterface
 import android.support.v4.app.Fragment
 import android.view.View
+import android.widget.ProgressBar
 import android.widget.Toast
 
 /**
@@ -68,5 +70,26 @@ interface IContextHelper {
             .setPositiveButton(posText, posListener)
             .setNegativeButton(negText, negListener)
             .show()
+    }
+
+    /**
+     * Title + Message + List + Listener
+     */
+    fun Context.showAlert(title: CharSequence, list: Array<out CharSequence>, listener: DialogInterface.OnClickListener? = null) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setItems(list, listener)
+            .show()
+    }
+
+    /**
+     * Context + Message + Flag -> ProgressDialog
+     */
+    fun Context.showProgress(context: Context, message: CharSequence, cancelable: Boolean = true): ProgressDialog {
+        val progressDlg = ProgressDialog(context)
+        progressDlg.setMessage(message)
+        progressDlg.setCancelable(cancelable)
+        progressDlg.show()
+        return progressDlg
     }
 }

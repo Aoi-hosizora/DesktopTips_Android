@@ -15,8 +15,8 @@ class TipItemAdapter(
     private val context: Context,
     private val tipItems: List<TipItem>,
 
-    private val onItemClick: (View, TipItem) -> Unit,
-    private val onItemLongClick: (View, TipItem) -> Boolean
+    private val onItemClick: (TipItem) -> Unit,
+    private val onItemLongClick: (TipItem) -> Unit
 
 ) : RecyclerView.Adapter<TipItemAdapter.ViewHolder>(), View.OnClickListener, View.OnLongClickListener {
 
@@ -42,12 +42,13 @@ class TipItemAdapter(
 
     override fun getItemCount(): Int = tipItems.size
 
-    override fun onClick(view: View) {
-        onItemClick(view, view.tag as TipItem)
+    override fun onClick(view: View?) {
+        view?.let { onItemClick(it.tag as TipItem) }
     }
 
-    override fun onLongClick(view: View): Boolean {
-        return onItemLongClick(view, view.tag as TipItem)
+    override fun onLongClick(view: View?): Boolean {
+        view?.let { onItemLongClick(it.tag as TipItem) }
+        return true
     }
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)

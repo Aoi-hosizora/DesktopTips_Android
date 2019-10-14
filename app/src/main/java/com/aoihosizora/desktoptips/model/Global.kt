@@ -3,6 +3,7 @@ package com.aoihosizora.desktoptips.model
 import android.content.Context
 import android.support.annotation.WorkerThread
 import android.util.Log
+import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.io.File
@@ -23,6 +24,8 @@ object Global {
         val filePath = "${context.getExternalFilesDir(null)!!.absolutePath}/$FILE_NAME"
         val file = File(filePath)
 
+        Log.i(TAG, "filePath: $filePath")
+
         // 文件不存在 -> 生成默认文件
         if (!file.exists()) {
             file.createNewFile()
@@ -37,7 +40,7 @@ object Global {
             tabs = jacksonObjectMapper().readValue(json)
             return true
         } catch (ex: Exception) {
-            Log.e(TAG, ex.message, ex)
+            Log.e(TAG, ex.message)
         }
 
         return false

@@ -23,23 +23,37 @@ class MainActivity : AppCompatActivity(), IContextHelper {
     }
 
     /**
-     * 初始化界面，列表
+     * 初始化界面
      */
     private fun initUI() {
         supportActionBar?.let {
             tab_layout.elevation = it.elevation
             supportActionBar?.elevation = 0F
         }
-        view_pager.adapter = TabPageAdapter(this, supportFragmentManager)
-        tab_layout.setupWithViewPager(view_pager)
     }
 
     /**
-     * 获取数据，更新 Global
+     * 获取数据，初始化列表
      */
     private fun initData() {
-        Global.loadData(this)
-        // TODO
+        val progressDlg = showProgress(this, "加载数据中", false)
+        Thread(Runnable {
+            val ok = Global.loadData(this)
+
+            runOnUiThread {
+
+                // 加载完数据，初始化列表
+                view_pager.adapter = TabPageAdapter(supportFragmentManager)
+                tab_layout.setupWithViewPager(view_pager)
+
+                progressDlg.dismiss()
+                if (!ok)
+                    showAlert(
+                        title = "加载数据", message = "数据文件加载错误，请检查文件。",
+                        posText = "结束程序", posListener = DialogInterface.OnClickListener { _, _ -> finish() }
+                    )
+            }
+        }).start()
     }
 
     /**
