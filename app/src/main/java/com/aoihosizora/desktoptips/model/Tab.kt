@@ -9,4 +9,16 @@ data class Tab (
 
     @JsonProperty(value = "Tips", index = 2)
     var tips: MutableList<TipItem> = mutableListOf()
-)
+) {
+    companion object {
+
+        fun isDuplicate(checkTitle: String): Boolean {
+            for (tab in Global.tabs) {
+                if (checkTitle == tab.title)
+                    return true
+            }
+            return false
+        }
+
+    }
+}

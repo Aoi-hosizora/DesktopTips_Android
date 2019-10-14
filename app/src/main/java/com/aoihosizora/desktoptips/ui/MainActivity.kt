@@ -3,7 +3,6 @@ package com.aoihosizora.desktoptips.ui
 import android.content.DialogInterface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.support.v7.app.AlertDialog
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
@@ -81,14 +80,17 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                 val newTitle = edt.text.toString()
                 // 空标题
                 if (newTitle.trim().isEmpty()) return@run
+
                 // 重复标题
-                if (Global.tabTitles.indexOf(newTitle) != -1) {
+                if (Tab.isDuplicate(newTitle)) {
                     showAlert(title = "新分组", message = "分组名 \"$newTitle\" 已存在。")
                     return@run
                 }
                 // 新建分组
-                if (Global.tabTitles.add(newTitle)) {
+                if (Global.tabs.add(Tab(newTitle))) {
                     view_pager.adapter?.notifyDataSetChanged()
+                    Global.saveData(this@MainActivity)
+
                     view_pager.currentItem = tab_layout.tabCount - 1
                     showToast("分组 $newTitle 添加成功")
                 } else {
@@ -104,19 +106,20 @@ class MainActivity : AppCompatActivity(), IContextHelper {
      */
     private fun deleteTab() {
         // 最后一个标题
-        if (Global.tabTitles.size == 1) {
+        if (Global.tabs.size == 1) {
             showAlert(title = "删除分组", message = "无法删除最后一个分组。")
             return
         }
 
         showAlert(
             title = "删除分组",
-            message = "确定删除分组 \"${Global.tabTitles[view_pager.currentItem]}\" ？",
+            message = "确定删除分组 \"${Global.tabs[view_pager.currentItem].title}\" ？",
             posText = "删除",
             posListener = DialogInterface.OnClickListener { _, _ -> run {
 
-                Global.tabTitles.removeAt(view_pager.currentItem)
+                Global.tabs.removeAt(view_pager.currentItem)
                 view_pager.adapter?.notifyDataSetChanged()
+                Global.saveData(this@MainActivity)
 
                 // 删除的标题在最后 -> 前移
                 if (view_pager.currentItem == tab_layout.tabCount)
@@ -132,7 +135,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
      */
     private fun renameTab() {
         val edt = EditText(this)
-        edt.setText(Global.tabTitles[view_pager.currentItem])
+        edt.setText(Global.tabs[view_pager.currentItem].title)
         edt.setSingleLine(true)
 
         showAlert(
@@ -147,14 +150,15 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                 if (newTitle.trim().isEmpty()) return@run
 
                 // 非当前标题 && 重复标题
-                if (newTitle != Global.tabTitles[view_pager.currentItem]
-                    && Global.tabTitles.indexOf(newTitle) != -1) {
+                if (newTitle != Global.tabs[view_pager.currentItem].title
+                    && Tab.isDuplicate(newTitle)) {
                     showAlert(title = "重命名分组", message = "分组名 \"$newTitle\" 已存在。")
                     return@run
                 }
                 // 重命名分组
-                Global.tabTitles[view_pager.currentItem] = newTitle
+                Global.tabs[view_pager.currentItem].title = newTitle
                 view_pager.adapter?.notifyDataSetChanged()
+                Global.saveData(this@MainActivity)
 
             }}
         )

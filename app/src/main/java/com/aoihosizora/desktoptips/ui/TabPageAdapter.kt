@@ -19,10 +19,10 @@ class TabPageAdapter(context: Context, fm: FragmentManager) : FragmentPagerAdapt
     }
 
     override fun getPageTitle(position: Int): CharSequence? {
-        return Global.tabTitles[position]
+        return Global.tabs[position].title
     }
 
     override fun getCount(): Int {
-        return Global.tabTitles.size
+        return Global.tabs.size
     }
 }

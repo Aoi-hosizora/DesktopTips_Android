@@ -32,12 +32,12 @@ class TabFragment : Fragment(), IContextHelper {
      */
     private fun initUI(view: View) {
 
-        view.txt_main.text = if (tabIdx in 0 until Global.tabTitles.size)
-            Global.tabTitles[tabIdx]
+        view.txt_main.text = if (tabIdx in 0 until Global.tabs.size)
+            "${Global.tabs[tabIdx].title}, ${Global.tabs[tabIdx].tips.size}"
             else "Not Found"
 
         view.btn_main.setOnClickListener {
-            activity?.showAlert(message = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(Global.tabs), title = "")
+            activity?.showAlert(message = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(Global.tabs[tabIdx]), title = "")
         }
     }
 }
