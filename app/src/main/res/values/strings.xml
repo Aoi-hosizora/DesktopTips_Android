@@ -1,3 +1,9 @@
 <resources>
+
     <string name="app_name">DesktopTips</string>
+
+    <!-- Menu -->
+    <string name="menu_add_tab">添加分组</string>
+    <string name="menu_delete_tab">删除分组</string>
+
 </resources>
