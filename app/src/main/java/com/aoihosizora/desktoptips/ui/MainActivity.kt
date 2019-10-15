@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.EditText
 import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
@@ -19,17 +20,21 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         setContentView(R.layout.activity_main)
 
         initData()
-        initUI()
     }
 
     /**
-     * 初始化界面
+     * 初始化界面，显示分栏
      */
     private fun initUI() {
         supportActionBar?.let {
             tab_layout.elevation = it.elevation
             supportActionBar?.elevation = 0F
         }
+
+        tab_layout.visibility = View.VISIBLE
+
+        view_pager.adapter = TabPageAdapter(supportFragmentManager)
+        tab_layout.setupWithViewPager(view_pager)
     }
 
     /**
@@ -42,9 +47,8 @@ class MainActivity : AppCompatActivity(), IContextHelper {
 
             runOnUiThread {
 
-                // 加载完数据，初始化列表
-                view_pager.adapter = TabPageAdapter(supportFragmentManager)
-                tab_layout.setupWithViewPager(view_pager)
+                // 加载完数据，初始化界面
+                initUI()
 
                 progressDlg.dismiss()
                 if (!ok)
@@ -88,9 +92,9 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         showAlert(
             title = "新分组",
             view = edt,
-            posText = "取消",
-            negText = "添加",
-            negListener = DialogInterface.OnClickListener { _, _ -> run {
+            negText = "取消",
+            posText= "添加",
+            posListener = DialogInterface.OnClickListener { _, _ -> run {
 
                 val newTitle = edt.text.toString()
                 // 空标题
@@ -156,9 +160,9 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         showAlert(
             title = "重命名分组",
             view = edt,
-            posText = "取消",
-            negText = "重命名",
-            negListener = DialogInterface.OnClickListener { _, _ -> run {
+            negText = "取消",
+            posText = "重命名",
+            posListener = DialogInterface.OnClickListener { _, _ -> run {
 
                 val newTitle = edt.text.toString()
                 // 空标题

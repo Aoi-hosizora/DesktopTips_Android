@@ -4,15 +4,26 @@ import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.DialogInterface
+import android.support.design.widget.Snackbar
 import android.support.v4.app.Fragment
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
+import android.support.v4.content.ContextCompat.startActivity
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
+import java.lang.Exception
+
 
 /**
  * 显示 toast / alert 辅助类
  */
 interface IContextHelper {
+
+    companion object {
+        const val TAG: String = "IContextHelper"
+    }
 
     /**
      * LENGTH_SHORT Toast
@@ -75,7 +86,8 @@ interface IContextHelper {
     /**
      * Title + Message + List + Listener
      */
-    fun Context.showAlert(title: CharSequence, list: Array<out CharSequence>, listener: DialogInterface.OnClickListener? = null) {
+    fun Context.showAlert(title: CharSequence,
+                          list: Array<out CharSequence>, listener: DialogInterface.OnClickListener? = null) {
         AlertDialog.Builder(this)
             .setTitle(title)
             .setItems(list, listener)
@@ -91,5 +103,39 @@ interface IContextHelper {
         progressDlg.setCancelable(cancelable)
         progressDlg.show()
         return progressDlg
+    }
+
+    /**
+     * Message + View
+     */
+    fun Context.showSnackBar(message: CharSequence, view: View) {
+        Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Message + View + Action + Listener
+     */
+    fun Context.showSnackBar(message: CharSequence, view: View,
+                             action: CharSequence, listener: View.OnClickListener? = null) {
+        Snackbar
+            .make(view, message, Snackbar.LENGTH_SHORT)
+            .setAction(action, listener)
+            .show()
+    }
+
+    /**
+     * Links
+     */
+    fun Context.showBrowser(links: Collection<String>) {
+        for (link in links) {
+            try {
+                val uri = Uri.parse(link)
+                val intent = Intent(Intent.ACTION_VIEW, uri)
+                startActivity(intent)
+            } catch (ex: Exception) {
+                Log.e(TAG, ex.message)
+                continue
+            }
+        }
     }
 }
