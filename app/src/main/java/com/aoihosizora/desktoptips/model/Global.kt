@@ -3,7 +3,6 @@ package com.aoihosizora.desktoptips.model
 import android.content.Context
 import android.support.annotation.WorkerThread
 import android.util.Log
-import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.io.File

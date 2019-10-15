@@ -13,6 +13,9 @@ data class Tab (
 ) {
     companion object {
 
+        /**
+         * 判斷新標題是否在 Global中重複
+         */
         fun isDuplicate(checkTitle: String): Boolean {
             for (tab in Global.tabs) {
                 if (checkTitle == tab.title)

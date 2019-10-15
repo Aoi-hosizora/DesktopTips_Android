@@ -5,16 +5,13 @@ import android.app.ProgressDialog
 import android.content.Context
 import android.content.DialogInterface
 import android.support.design.widget.Snackbar
-import android.support.v4.app.Fragment
 import android.view.View
-import android.widget.ProgressBar
 import android.widget.Toast
-import android.support.v4.content.ContextCompat.startActivity
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.widget.EditText
 import java.lang.Exception
-
 
 /**
  * 显示 toast / alert 辅助类
@@ -81,6 +78,34 @@ interface IContextHelper {
             .setPositiveButton(posText, posListener)
             .setNegativeButton(negText, negListener)
             .show()
+    }
+
+    /**
+     * Title + Text + Hint + MaxLines + PosText + PosClick + NegText + NegClick
+     */
+    fun Context.showInputDlg(title: CharSequence,
+                             text: CharSequence = "", hint: CharSequence = "", maxLines: Int = 5,
+                             posText: CharSequence, posClick: (DialogInterface, Int, String) -> Unit,
+                             negText: CharSequence, negListener: DialogInterface.OnClickListener? = null) {
+
+        val edt = EditText(this)
+        edt.setSingleLine(true)
+        edt.maxLines = maxLines
+        edt.setHorizontallyScrolling(false)
+
+        edt.hint = hint
+        edt.setText(text)
+
+        showAlert(
+            title = title,
+            view = edt,
+            posText= posText,
+            posListener = DialogInterface.OnClickListener { dialogInterface, i -> run {
+                posClick(dialogInterface, i, edt.text.toString())
+            }},
+            negText = negText,
+            negListener = negListener
+        )
     }
 
     /**

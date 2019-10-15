@@ -3,9 +3,11 @@ package com.aoihosizora.desktoptips.ui
 import android.content.DialogInterface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputType
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
@@ -85,18 +87,13 @@ class MainActivity : AppCompatActivity(), IContextHelper {
      * 新建分组
      */
     private fun addTab() {
-        val edt = EditText(this)
-        edt.hint = "新分组标题"
-        edt.setSingleLine(true)
-
-        showAlert(
+        showInputDlg(
             title = "新分组",
-            view = edt,
+            hint = "新分组标题",
             negText = "取消",
             posText= "添加",
-            posListener = DialogInterface.OnClickListener { _, _ -> run {
+            posClick = { _, _, newTitle -> run {
 
-                val newTitle = edt.text.toString()
                 // 空标题
                 if (newTitle.trim().isEmpty()) return@run
 
@@ -153,18 +150,13 @@ class MainActivity : AppCompatActivity(), IContextHelper {
      * 重命名分组
      */
     private fun renameTab() {
-        val edt = EditText(this)
-        edt.setText(Global.tabs[view_pager.currentItem].title)
-        edt.setSingleLine(true)
-
-        showAlert(
+        showInputDlg(
             title = "重命名分组",
-            view = edt,
+            text = Global.tabs[view_pager.currentItem].title,
             negText = "取消",
             posText = "重命名",
-            posListener = DialogInterface.OnClickListener { _, _ -> run {
+            posClick = { _, _, newTitle -> run {
 
-                val newTitle = edt.text.toString()
                 // 空标题
                 if (newTitle.trim().isEmpty()) return@run
 

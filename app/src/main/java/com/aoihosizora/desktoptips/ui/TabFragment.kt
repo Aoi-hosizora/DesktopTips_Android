@@ -5,9 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v4.app.Fragment
-import android.support.v4.content.ContextCompat.getSystemService
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
@@ -17,7 +15,6 @@ import com.aoihosizora.desktoptips.model.Global
 import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import kotlinx.android.synthetic.main.fragment_tab.view.*
 import android.support.v7.widget.DividerItemDecoration
-import android.widget.EditText
 import com.aoihosizora.desktoptips.model.TipItem
 
 class TabFragment : Fragment(), IContextHelper {
@@ -82,24 +79,20 @@ class TabFragment : Fragment(), IContextHelper {
                         // 初始值
                         val preContent = tipItem.content
 
-                        val edt = EditText(context!!)
-                        edt.setText(tipItem.content)
-                        edt.setSingleLine(true)
-
-                        activity?.showAlert(
+                        activity?.showInputDlg(
                             title = "编辑",
-                            view = edt,
+                            text = tipItem.content,
                             negText = "取消",
                             posText = "修改",
-                            posListener = DialogInterface.OnClickListener { _, _ -> run {
+                            posClick = { _, _ , newText -> run {
 
-                                if (edt.text.isNotEmpty() && preContent != edt.text.toString()) {
-                                    tipItem.content = edt.text.toString()
+                                if (newText.isNotEmpty() && preContent != newText) {
+                                    tipItem.content = newText
                                     adapter?.notifyDataSetChanged()
                                     Global.saveData(activity!!)
 
                                     activity?.showSnackBar(
-                                        message = "已经修改：${preContent}",
+                                        message = "已修改：$preContent",
                                         view = view!!,
                                         action = "撤销",
                                         listener = View.OnClickListener {
@@ -151,15 +144,19 @@ class TabFragment : Fragment(), IContextHelper {
                             if (token.startsWith("http://") || token.startsWith("https://"))
                                 links.add(token)
                         }
-                        activity?.showAlert(
-                            title = "用浏览器打开",
-                            message = "是否打开以下 ${links.size} 个链接：\n\n" + links.joinToString("\n"),
-                            posText = "打开",
-                            posListener = DialogInterface.OnClickListener { _, _ -> run {
-                                activity?.showBrowser(links)
-                            }},
-                            negText = "取消"
-                        )
+                        if (links.isEmpty()) {
+                            activity?.showAlert(title = "用浏览器打开", message = "当前项中不包含任何链接。")
+                        } else {
+                            activity?.showAlert(
+                                title = "用浏览器打开",
+                                message = "是否打开以下 ${links.size} 个链接：\n\n" + links.joinToString("\n"),
+                                posText = "打开",
+                                posListener = DialogInterface.OnClickListener { _, _ -> run {
+                                    activity?.showBrowser(links)
+                                }},
+                                negText = "取消"
+                            )
+                        }
                     }
                     5 -> { // 关闭
                         dialog.dismiss()

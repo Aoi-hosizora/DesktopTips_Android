@@ -7,4 +7,6 @@
     <string name="menu_delete_tab">删除分组</string>
     <string name="menu_rename_tab">重命名分组</string>
 
+    <string name="empty_view">无内容</string>
+
 </resources>
