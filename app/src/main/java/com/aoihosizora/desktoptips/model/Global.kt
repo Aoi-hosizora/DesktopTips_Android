@@ -23,8 +23,6 @@ object Global {
         val filePath = "${context.getExternalFilesDir(null)!!.absolutePath}/$FILE_NAME"
         val file = File(filePath)
 
-        Log.i(TAG, "filePath: $filePath")
-
         // 文件不存在 -> 生成默认文件
         if (!file.exists()) {
             file.createNewFile()

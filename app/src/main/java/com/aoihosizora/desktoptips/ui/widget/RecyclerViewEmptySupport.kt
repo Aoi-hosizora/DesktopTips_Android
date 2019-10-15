@@ -12,7 +12,7 @@ class RecyclerViewEmptySupport : RecyclerView {
     private val emptyObserver = object : RecyclerView.AdapterDataObserver() {
 
         override fun onChanged() {
-            val adapter = adapter
+            val adapter = this@RecyclerViewEmptySupport.adapter
             if (adapter != null && mEmptyView != null) {
 
                 if (adapter.itemCount == 0) {
@@ -40,6 +40,11 @@ class RecyclerViewEmptySupport : RecyclerView {
             if (!adapter.hasObservers())
                 adapter.registerAdapterDataObserver(emptyObserver)
         }
+        emptyObserver.onChanged()
+    }
+
+    fun notifyDataSetChanged() {
+        super.getAdapter()?.notifyDataSetChanged()
         emptyObserver.onChanged()
     }
 }
