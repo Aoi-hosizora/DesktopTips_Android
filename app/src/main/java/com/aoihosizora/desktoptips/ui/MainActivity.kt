@@ -28,26 +28,10 @@ class MainActivity : AppCompatActivity(), IContextHelper {
      * 回退
      */
     override fun onBackPressed() {
-
         val currFrag: TabFragment? = view_pager.adapter?.instantiateItem(view_pager, view_pager.currentItem) as? TabFragment
+        val hdl1: Boolean? = currFrag?.onKeyBack()
+        if (hdl1 != null && hdl1) return
 
-        currFrag?.run{
-            // 1. Fab
-            (view?.fab)?.run {
-                if (isExpanded) {
-                    collapse()
-                    return@onBackPressed
-                }
-            }
-
-            // 2. 多选
-            (view?.list_tipItem?.adapter as? TipItemAdapter)?.run {
-                if (checkMode) {
-                    checkMode = false
-                    return@onBackPressed
-                }
-            }
-        }
         super.onBackPressed()
     }
 

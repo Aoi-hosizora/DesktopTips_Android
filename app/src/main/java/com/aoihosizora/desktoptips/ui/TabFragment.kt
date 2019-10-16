@@ -39,25 +39,115 @@ class TabFragment : Fragment(), IContextHelper {
     }
 
     /**
+     * 返回键，受 MainAct 委托
+     * @return 是否操作
+     */
+    fun onKeyBack(): Boolean {
+        view?.run {
+            // 1. Fab 展开
+            if (fab.isExpanded) {
+                fab.collapse()
+                return true
+            }
+            // 2. List 多选
+            listAdapter?.let {
+                if (it.checkMode) {
+                    it.checkMode = false
+                    return@onKeyBack true
+                }
+            }
+        }
+        return false
+    }
+
+    /**
      * 初始化碎片参数 Fab 和 适配器
      */
     private fun initUI(view: View) {
-        // Fab Menu
+        // Fab
+        initFab(view)
+
+        // List
+        view.list_tipItem.setEmptyView(view.view_empty)
+        view.list_tipItem.layoutManager = LinearLayoutManager(activity)
+        view.list_tipItem.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+
+        val listAdapter = TipItemAdapter(
+            context = context!!,
+            tipItems = Global.tabs[tabIdx].tips,
+            
+            onItemClick = { _, tipItem -> onItemClick(tipItem) },
+            onItemLongClick = { _, tipItem -> run {
+                listAdapter?.checkMode = true
+                listAdapter?.setItemChecked(tipItem, true)
+                view.fab.expand()
+            }},
+            onCheckStateChanged = { }
+        )
+
+        view.list_tipItem.setItemViewCacheSize(0)
+        view.list_tipItem.adapter = listAdapter
+    }
+
+    /**
+     * 初始化 Fab UI / Action
+     */
+    private fun initFab(view: View) {
+        // Menu
         view.view_fab_back.setOnClickListener {
             view.fab.collapse()
         }
 
+        // Action Listener
         view.fab.setOnFloatingActionsMenuUpdateListener(object : FloatingActionsMenu.OnFloatingActionsMenuUpdateListener {
-            override fun onMenuExpanded() {
-                view.view_fab_back.visibility = View.VISIBLE
-            }
 
             override fun onMenuCollapsed() {
                 view.view_fab_back.visibility = View.GONE
             }
+
+            override fun onMenuExpanded() {
+                view.view_fab_back.visibility = View.VISIBLE
+
+                // 初始化菜单
+                if (listAdapter == null) return
+
+                /////////////////////////////////////////
+                // 显示相关
+
+                // 选中长度
+                val selLength: Int = listAdapter!!.getAllChecked().size
+
+                val isCheck: Boolean = listAdapter!!.checkMode
+                val isMulti: Boolean = isCheck && selLength > 1
+
+                val showIfCheck = if (isCheck) View.VISIBLE else View.GONE
+                val unShowIfCheck = if (!isCheck) View.VISIBLE else View.GONE
+                // val showIfMulti = if (isCheck && isMulti) View.VISIBLE else View.GONE
+                val unShowIfMulti = if (isCheck && !isMulti) View.VISIBLE else View.GONE
+
+                view.fab_add.visibility = unShowIfCheck
+                view.fab_exit_check.visibility = showIfCheck
+                view.fab_more.visibility = showIfCheck
+                view.fab_up.visibility = unShowIfMulti
+                view.fab_down.visibility = unShowIfMulti
+
+                // 以下为单选
+                if (!isCheck || isMulti) return
+
+                /////////////////////////////////////////
+                // 位置相关
+
+                // 列表长度
+                val allSize: Int = Global.tabs[tabIdx].tips.size
+                // 当前位置
+                val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked()[0])
+
+                view.fab_up.isEnabled = pos != 0
+                view.fab_down.isEnabled = pos != allSize - 1
+            }
         })
 
-        // Fab Button
+        // Button
         view.fab_add.setOnClickListener { // 新建
             newTip()
             view.fab.collapse()
@@ -80,41 +170,6 @@ class TabFragment : Fragment(), IContextHelper {
             activity?.showToast("TODO")
             view.fab.collapse()
         }
-
-        // List
-        view.list_tipItem.setEmptyView(view.view_empty)
-        view.list_tipItem.layoutManager = LinearLayoutManager(activity)
-        view.list_tipItem.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
-
-        val listAdapter = TipItemAdapter(
-            context = context!!,
-            tipItems = Global.tabs[tabIdx].tips,
-            
-            onItemClick = { _, tipItem -> onItemClick(tipItem) },
-            onItemLongClick = { _, tipItem -> run {
-                listAdapter?.checkMode = true
-                listAdapter?.setItemChecked(tipItem, true)
-                view.fab.expand()
-            }},
-            onCheckStateChanged = { isCheck -> run {
-                val length = listAdapter?.getAllChecked()?.size
-                val isMulti = length != null && length > 1
-
-                val showIfCheck = if (isCheck) View.VISIBLE else View.GONE
-                val unShowIfCheck = if (!isCheck) View.VISIBLE else View.GONE
-                // val showIfMulti = if (isCheck && isMulti) View.VISIBLE else View.GONE
-                val unShowIfMulti = if (isCheck && !isMulti) View.VISIBLE else View.GONE
-
-                view.fab_add.visibility = unShowIfCheck
-                view.fab_exit_check.visibility = showIfCheck
-                view.fab_more.visibility = showIfCheck
-                view.fab_up.visibility = unShowIfMulti
-                view.fab_down.visibility = unShowIfMulti
-            }}
-        )
-
-        view.list_tipItem.setItemViewCacheSize(0)
-        view.list_tipItem.adapter = listAdapter
     }
 
     /**
@@ -122,8 +177,8 @@ class TabFragment : Fragment(), IContextHelper {
      */
     private fun refreshAfterUpdate() {
         view?.let {
-            // listAdapter?.notifyDataSetChanged()
             view?.list_tipItem?.notifyDataSetChanged()
+            listAdapter?.notifyDataSetChanged()
             Global.saveData(activity!!)
         }
     }
@@ -279,6 +334,12 @@ class TabFragment : Fragment(), IContextHelper {
             else            Global.tabs[tabIdx].tips.swap(currIdx, currIdx + 1)
 
             refreshAfterUpdate()
+
+            val allSize: Int = Global.tabs[tabIdx].tips.size
+            val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked()[0])
+
+            view?.fab_up?.isEnabled     = pos != 0
+            view?.fab_down?.isEnabled   = pos != allSize - 1
         }
     }
 
