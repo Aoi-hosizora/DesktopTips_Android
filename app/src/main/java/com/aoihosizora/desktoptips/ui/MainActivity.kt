@@ -3,6 +3,7 @@ package com.aoihosizora.desktoptips.ui
 import android.content.DialogInterface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -10,8 +11,9 @@ import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
 import com.aoihosizora.desktoptips.model.Tab
 import com.aoihosizora.desktoptips.ui.adapter.TabPageAdapter
+import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
+import kotlinx.android.synthetic.main.fragment_tab.view.*
 
 class MainActivity : AppCompatActivity(), IContextHelper {
 
@@ -23,26 +25,30 @@ class MainActivity : AppCompatActivity(), IContextHelper {
     }
 
     /**
-     * 回退按键处理
-     */
-    private val onBachHandle: Stack<() -> Unit> = Stack()
-
-    fun addBackHandle(handle: () -> Unit) {
-        onBachHandle.push(handle)
-    }
-
-    fun deleteBackHandle() {
-        onBachHandle.pop()
-    }
-
-    /**
      * 回退
      */
     override fun onBackPressed() {
-        if (!onBachHandle.empty())
-            onBachHandle.pop()()
-        else
-            super.onBackPressed()
+
+        val currFrag: TabFragment? = view_pager.adapter?.instantiateItem(view_pager, view_pager.currentItem) as? TabFragment
+
+        currFrag?.run{
+            // 1. Fab
+            (view?.fab)?.run {
+                if (isExpanded) {
+                    collapse()
+                    return@onBackPressed
+                }
+            }
+
+            // 2. 多选
+            (view?.list_tipItem?.adapter as? TipItemAdapter)?.run {
+                if (checkMode) {
+                    checkMode = false
+                    return@onBackPressed
+                }
+            }
+        }
+        super.onBackPressed()
     }
 
     /**
@@ -70,7 +76,6 @@ class MainActivity : AppCompatActivity(), IContextHelper {
             val ok = Global.loadData(this)
 
             runOnUiThread {
-
                 // 加载完数据，初始化界面
                 initUI()
 

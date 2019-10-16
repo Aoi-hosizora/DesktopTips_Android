@@ -16,7 +16,8 @@ class TipItemAdapter(
     private val tipItems: List<TipItem>,
 
     private val onItemClick: (View, TipItem) -> Unit,
-    private val onItemLongClick: (View, TipItem) -> Unit
+    private val onItemLongClick: (View, TipItem) -> Unit,
+    private val onCheckStateChanged: (isCheck: Boolean) -> Unit
 
 ) : RecyclerView.Adapter<TipItemAdapter.ViewHolder>(), View.OnClickListener, View.OnLongClickListener {
 
@@ -25,7 +26,13 @@ class TipItemAdapter(
             field = value
             if (!value) checkItems.clear()
             notifyDataSetChanged()
+
+            onCheckStateChanged(value) // 状态更改通知
         }
+
+    init {
+        onCheckStateChanged(checkMode)
+    }
 
     private val checkItems: MutableList<TipItem> = mutableListOf()
 

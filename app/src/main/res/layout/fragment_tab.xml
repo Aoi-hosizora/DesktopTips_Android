@@ -2,6 +2,7 @@
 <android.support.design.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -23,13 +24,82 @@
         android:scrollbars="vertical"
         android:visibility="visible" />
 
-    <android.support.design.widget.FloatingActionButton
+    <View
+        android:id="@+id/view_fab_back"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#00FFFFFF"
+        android:visibility="gone" />
+
+    <com.getbase.floatingactionbutton.FloatingActionsMenu
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         app:elevation="8dp"
-        android:src="@drawable/ic_add_white_24dp" />
+        app:layout_dodgeInsetEdges="bottom"
+
+        fab:fab_addButtonColorNormal="@color/colorAccent"
+        fab:fab_addButtonColorPressed="@color/colorAccentDark"
+        fab:fab_addButtonPlusIconColor="@color/white"
+
+        fab:fab_labelStyle="@style/fab_menu_labels_style"
+        fab:fab_expandDirection="up"
+        fab:fab_labelsPosition="left">
+
+        <!-- Show If Not Check -->
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_icon="@drawable/ic_add_white_24dp"
+            fab:fab_colorNormal="@color/colorAccentLight"
+            fab:fab_colorPressed="@color/colorAccent"
+            fab:fab_title="新建" />
+
+        <!-- Show If Check -->
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_more"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_icon="@drawable/ic_more_horiz_white_24dp"
+            fab:fab_colorNormal="@color/colorAccentLight"
+            fab:fab_colorPressed="@color/colorAccent"
+            app:fab_size="mini"
+            fab:fab_title="更多选项" />
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_up"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_icon="@drawable/ic_arrow_upward_white_24dp"
+            fab:fab_colorNormal="@color/colorAccentLight"
+            fab:fab_colorPressed="@color/colorAccent"
+            app:fab_size="mini"
+            fab:fab_title="上移" />
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_down"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_icon="@drawable/ic_arrow_downward_white_24dp"
+            fab:fab_colorNormal="@color/colorAccentLight"
+            fab:fab_colorPressed="@color/colorAccent"
+            app:fab_size="mini"
+            fab:fab_title="下移" />
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_exit_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_icon="@drawable/ic_close_white_24dp"
+            fab:fab_colorNormal="@color/colorAccentLight"
+            fab:fab_colorPressed="@color/colorAccent"
+            fab:fab_title="退出多选" />
+
+    </com.getbase.floatingactionbutton.FloatingActionsMenu>
 
 </android.support.design.widget.CoordinatorLayout>

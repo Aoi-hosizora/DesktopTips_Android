@@ -12,4 +12,15 @@
         <item name="textAllCaps">false</item>
     </style>
 
+    <!-- Fab Label -->
+    <style name="fab_menu_labels_style">
+        <item name="android:background">#A6000000</item>
+        <item name="android:textColor">#ffffff</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:paddingRight">10dp</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:radius">2dp</item>
+    </style>
+
 </resources>

@@ -16,6 +16,8 @@ import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import kotlinx.android.synthetic.main.fragment_tab.view.*
 import android.support.v7.widget.DividerItemDecoration
 import com.aoihosizora.desktoptips.model.TipItem
+import com.aoihosizora.desktoptips.util.swap
+import com.getbase.floatingactionbutton.FloatingActionsMenu
 
 class TabFragment : Fragment(), IContextHelper {
 
@@ -33,20 +35,50 @@ class TabFragment : Fragment(), IContextHelper {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_tab, container, false)
         initUI(view)
-
         return view
     }
 
     /**
-     * 初始化碎片参数和适配器
+     * 初始化碎片参数 Fab 和 适配器
      */
     private fun initUI(view: View) {
-        // Fab
-        view.fab.setOnClickListener {
-            if (listAdapter?.checkMode != null && listAdapter?.checkMode == true)
-                activity?.showToast(listAdapter!!.getAllChecked().toString())
-            else // 新建
-                newTip()
+        // Fab Menu
+        view.view_fab_back.setOnClickListener {
+            view.fab.collapse()
+        }
+
+        view.fab.setOnFloatingActionsMenuUpdateListener(object : FloatingActionsMenu.OnFloatingActionsMenuUpdateListener {
+            override fun onMenuExpanded() {
+                view.view_fab_back.visibility = View.VISIBLE
+            }
+
+            override fun onMenuCollapsed() {
+                view.view_fab_back.visibility = View.GONE
+            }
+        })
+
+        // Fab Button
+        view.fab_add.setOnClickListener { // 新建
+            newTip()
+            view.fab.collapse()
+        }
+
+        view.fab_exit_check.setOnClickListener { // 退出多选
+            listAdapter?.checkMode = false
+            view.fab.collapse()
+        }
+
+        view.fab_up.setOnClickListener { // 上移
+            moveTip(listAdapter?.getAllChecked()?.get(0), isMoveUp = true)
+        }
+
+        view.fab_down.setOnClickListener { // 下移
+            moveTip(listAdapter?.getAllChecked()?.get(0), isMoveUp = false)
+        }
+
+        view.fab_more.setOnClickListener {  // 更多
+            activity?.showToast("TODO")
+            view.fab.collapse()
         }
 
         // List
@@ -61,10 +93,23 @@ class TabFragment : Fragment(), IContextHelper {
             onItemClick = { _, tipItem -> onItemClick(tipItem) },
             onItemLongClick = { _, tipItem -> run {
                 listAdapter?.checkMode = true
-                (activity as? MainActivity)?.addBackHandle {
-                    listAdapter?.checkMode = false
-                }
                 listAdapter?.setItemChecked(tipItem, true)
+                view.fab.expand()
+            }},
+            onCheckStateChanged = { isCheck -> run {
+                val length = listAdapter?.getAllChecked()?.size
+                val isMulti = length != null && length > 1
+
+                val showIfCheck = if (isCheck) View.VISIBLE else View.GONE
+                val unShowIfCheck = if (!isCheck) View.VISIBLE else View.GONE
+                // val showIfMulti = if (isCheck && isMulti) View.VISIBLE else View.GONE
+                val unShowIfMulti = if (isCheck && !isMulti) View.VISIBLE else View.GONE
+
+                view.fab_add.visibility = unShowIfCheck
+                view.fab_exit_check.visibility = showIfCheck
+                view.fab_more.visibility = showIfCheck
+                view.fab_up.visibility = unShowIfMulti
+                view.fab_down.visibility = unShowIfMulti
             }}
         )
 
@@ -77,7 +122,8 @@ class TabFragment : Fragment(), IContextHelper {
      */
     private fun refreshAfterUpdate() {
         view?.let {
-            listAdapter?.notifyDataSetChanged()
+            // listAdapter?.notifyDataSetChanged()
+            view?.list_tipItem?.notifyDataSetChanged()
             Global.saveData(activity!!)
         }
     }
@@ -216,6 +262,24 @@ class TabFragment : Fragment(), IContextHelper {
         tipItem.highLight = !tipItem.highLight
         refreshAfterUpdate()
         activity?.showToast("${tipItem.content} ${if (tipItem.highLight) "已高亮" else "已取消高亮"}")
+    }
+
+    /**
+     * 上下移
+     */
+    private fun moveTip(tipItem: TipItem?, isMoveUp: Boolean) {
+        if (tipItem != null) {
+            val currIdx = Global.tabs[tabIdx].tips.indexOf(tipItem)
+            val len = Global.tabs[tabIdx].tips.size
+
+            if (isMoveUp && currIdx == 0) return
+            if (!isMoveUp && currIdx == len - 1) return
+
+            if (isMoveUp)   Global.tabs[tabIdx].tips.swap(currIdx, currIdx - 1)
+            else            Global.tabs[tabIdx].tips.swap(currIdx, currIdx + 1)
+
+            refreshAfterUpdate()
+        }
     }
 
     /**
