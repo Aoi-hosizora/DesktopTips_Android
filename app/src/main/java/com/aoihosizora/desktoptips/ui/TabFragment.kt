@@ -23,6 +23,9 @@ class TabFragment : Fragment(), IContextHelper {
         const val TAB_IDX = "TAB_IDX"
     }
 
+    private val listAdapter: TipItemAdapter?
+        get() = view?.list_tipItem?.adapter as? TipItemAdapter
+
     private val tabIdx: Int by lazy {
         arguments!!.getInt(TAB_IDX, -1)
     }
@@ -40,8 +43,10 @@ class TabFragment : Fragment(), IContextHelper {
     private fun initUI(view: View) {
         // Fab
         view.fab.setOnClickListener {
-            // 新建
-            newTip()
+            if (listAdapter?.checkMode != null && listAdapter?.checkMode == true)
+                activity?.showToast(listAdapter!!.getAllChecked().toString())
+            else // 新建
+                newTip()
         }
 
         // List
@@ -53,10 +58,17 @@ class TabFragment : Fragment(), IContextHelper {
             context = context!!,
             tipItems = Global.tabs[tabIdx].tips,
             
-            onItemClick = { tipItem -> onItemClick(tipItem) },
-            onItemLongClick = { tipItem -> onItemLongClick(tipItem) }
+            onItemClick = { _, tipItem -> onItemClick(tipItem) },
+            onItemLongClick = { _, tipItem -> run {
+                listAdapter?.checkMode = true
+                (activity as? MainActivity)?.addBackHandle {
+                    listAdapter?.checkMode = false
+                }
+                listAdapter?.setItemChecked(tipItem, true)
+            }}
         )
 
+        view.list_tipItem.setItemViewCacheSize(0)
         view.list_tipItem.adapter = listAdapter
     }
 
@@ -65,7 +77,7 @@ class TabFragment : Fragment(), IContextHelper {
      */
     private fun refreshAfterUpdate() {
         view?.let {
-            it.list_tipItem?.notifyDataSetChanged()
+            listAdapter?.notifyDataSetChanged()
             Global.saveData(activity!!)
         }
     }
@@ -96,13 +108,6 @@ class TabFragment : Fragment(), IContextHelper {
                 }
             }}
         )
-    }
-
-    /**
-     * 项目长按
-     */
-    private fun onItemLongClick(tipItem: TipItem) {
-        copyTip(tipItem)
     }
 
     /**

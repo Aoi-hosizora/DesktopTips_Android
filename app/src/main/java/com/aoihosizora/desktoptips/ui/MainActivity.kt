@@ -3,17 +3,15 @@ package com.aoihosizora.desktoptips.ui
 import android.content.DialogInterface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.text.InputType
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.inputmethod.EditorInfo
-import android.widget.EditText
 import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
 import com.aoihosizora.desktoptips.model.Tab
 import com.aoihosizora.desktoptips.ui.adapter.TabPageAdapter
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
 
 class MainActivity : AppCompatActivity(), IContextHelper {
 
@@ -25,16 +23,40 @@ class MainActivity : AppCompatActivity(), IContextHelper {
     }
 
     /**
+     * 回退按键处理
+     */
+    private val onBachHandle: Stack<() -> Unit> = Stack()
+
+    fun addBackHandle(handle: () -> Unit) {
+        onBachHandle.push(handle)
+    }
+
+    fun deleteBackHandle() {
+        onBachHandle.pop()
+    }
+
+    /**
+     * 回退
+     */
+    override fun onBackPressed() {
+        if (!onBachHandle.empty())
+            onBachHandle.pop()()
+        else
+            super.onBackPressed()
+    }
+
+    /**
      * 初始化界面，显示分栏
      */
     private fun initUI() {
+        // TitleBar Shadow
         supportActionBar?.let {
             tab_layout.elevation = it.elevation
             supportActionBar?.elevation = 0F
         }
-
         tab_layout.visibility = View.VISIBLE
 
+        // Tab Layout
         view_pager.adapter = TabPageAdapter(supportFragmentManager)
         tab_layout.setupWithViewPager(view_pager)
     }

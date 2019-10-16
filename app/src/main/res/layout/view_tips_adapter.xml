@@ -6,10 +6,21 @@
     android:layout_height="wrap_content"
     android:background="?android:attr/selectableItemBackground">
 
-    <TextView
-        android:id="@+id/txt_content"
+    <CheckBox
+        android:id="@+id/check_box"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:clickable="false"
+        android:focusable="false"
+        android:layout_marginStart="@dimen/list_item_horizontal_margin"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/txt_content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:layout_marginStart="@dimen/list_item_horizontal_margin"
         android:layout_marginEnd="@dimen/list_item_horizontal_margin"
         android:layout_marginTop="@dimen/list_item_vertical_margin"

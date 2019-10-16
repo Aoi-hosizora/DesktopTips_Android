@@ -15,10 +15,28 @@ class TipItemAdapter(
     private val context: Context,
     private val tipItems: List<TipItem>,
 
-    private val onItemClick: (TipItem) -> Unit,
-    private val onItemLongClick: (TipItem) -> Unit
+    private val onItemClick: (View, TipItem) -> Unit,
+    private val onItemLongClick: (View, TipItem) -> Unit
 
 ) : RecyclerView.Adapter<TipItemAdapter.ViewHolder>(), View.OnClickListener, View.OnLongClickListener {
+
+    var checkMode = false
+        set(value) {
+            field = value
+            if (!value) checkItems.clear()
+            notifyDataSetChanged()
+        }
+
+    private val checkItems: MutableList<TipItem> = mutableListOf()
+
+    fun setItemChecked(tipItem: TipItem, isCheck: Boolean) {
+        if (!isCheck)
+            checkItems.remove(tipItem)
+        else
+            checkItems.add(tipItem)
+    }
+
+    fun getAllChecked(): MutableList<TipItem> = checkItems
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.view_tips_adapter, parent, false)
@@ -30,26 +48,46 @@ class TipItemAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val tip = tipItems[position]
-        holder.view.tag = tip
+        // holder.setIsRecyclable(false)
 
-        holder.view.txt_content.text = tip.content
-        if (tip.highLight)
+        val tipItem = tipItems[position]
+        holder.view.tag = tipItem
+
+        // Content
+        holder.view.txt_content.text = tipItem.content
+        if (tipItem.highLight)
             holder.view.txt_content.setTextColor(ContextCompat.getColor(context, R.color.highlight_color))
         else
             holder.view.txt_content.setTextColor(ContextCompat.getColor(context, R.color.text_color))
+
+        // Check
+        holder.view.check_box.setOnCheckedChangeListener(null)
+        holder.view.check_box.isChecked = checkItems.indexOf(tipItem) != -1
+        holder.view.check_box.visibility = if (checkMode) View.VISIBLE else View.GONE
+        holder.view.check_box.setOnCheckedChangeListener { _ , checked -> run {
+            if (checked)
+                checkItems.add(tipItem)
+            else
+                checkItems.remove(tipItem)
+        }}
     }
 
     override fun getItemCount(): Int = tipItems.size
 
     override fun onClick(view: View?) {
-        view?.let { onItemClick(it.tag as TipItem) }
+        if (!checkMode)
+            view?.let { onItemClick(it, it.tag as TipItem) }
+        else
+            view?.check_box?.let {
+                it.isChecked = !it.isChecked
+            }
     }
 
     override fun onLongClick(view: View?): Boolean {
-        view?.let { onItemLongClick(it.tag as TipItem) }
+        if (!checkMode)
+            view?.let { onItemLongClick(it, it.tag as TipItem) }
         return true
     }
 
-    class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
+    inner class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 }
