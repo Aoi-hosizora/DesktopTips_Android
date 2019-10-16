@@ -95,9 +95,10 @@
             android:id="@+id/fab_exit_check"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:fab_icon="@drawable/ic_close_white_24dp"
+            app:fab_icon="@drawable/ic_clear_all_white_24dp"
             fab:fab_colorNormal="@color/colorAccentLight"
             fab:fab_colorPressed="@color/colorAccent"
+            app:fab_size="mini"
             fab:fab_title="退出多选" />
 
     </com.getbase.floatingactionbutton.FloatingActionsMenu>

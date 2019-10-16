@@ -3,7 +3,6 @@ package com.aoihosizora.desktoptips.ui
 import android.content.DialogInterface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -11,9 +10,7 @@ import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
 import com.aoihosizora.desktoptips.model.Tab
 import com.aoihosizora.desktoptips.ui.adapter.TabPageAdapter
-import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.fragment_tab.view.*
 
 class MainActivity : AppCompatActivity(), IContextHelper {
 
@@ -123,7 +120,6 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                 } else {
                     showToast("分组 $newTitle 添加失败")
                 }
-
             }}
         )
     }
@@ -141,6 +137,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         showAlert(
             title = "删除分组",
             message = "确定删除分组 \"${Global.tabs[view_pager.currentItem].title}\" ？",
+            negText = "取消",
             posText = "删除",
             posListener = DialogInterface.OnClickListener { _, _ -> run {
 
@@ -152,8 +149,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                 if (view_pager.currentItem == tab_layout.tabCount)
                     view_pager.currentItem--
 
-            }},
-            negText = "取消"
+            }}
         )
     }
 
