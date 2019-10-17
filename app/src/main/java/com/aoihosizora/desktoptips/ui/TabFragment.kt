@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
@@ -71,6 +72,16 @@ class TabFragment : Fragment(), IContextHelper {
      * 初始化碎片参数 Fab 和 适配器
      */
     private fun initUI(view: View) {
+
+        // Srl
+        view.srl.setColorSchemeResources(R.color.colorAccent)
+        view.srl.setOnRefreshListener {
+            Handler().postDelayed({
+                view.list_tipItem.notifyDataSetChanged()
+                view.srl.isRefreshing = false
+            }, 100)
+        }
+
         // Fab
         initFab(view)
 
@@ -129,6 +140,9 @@ class TabFragment : Fragment(), IContextHelper {
      * 初始化 Fab UI / Action
      */
     private fun initFab(view: View) {
+
+        view.fab.collapse()
+
         // Menu
         view.view_fab_back.setOnClickListener {
             view.fab.collapse()
@@ -205,7 +219,7 @@ class TabFragment : Fragment(), IContextHelper {
 
         view.fab_more.setOnClickListener {  // 更多
             listAdapter?.let {
-                onItemsClick(it.getAllChecked())
+                onItemsClick(it.getAllChecked().toList())
             }
             view.fab.collapse()
         }
@@ -382,21 +396,20 @@ class TabFragment : Fragment(), IContextHelper {
         val tipIndies: MutableList<Int> = mutableListOf()
         val contents: MutableList<String> = mutableListOf()
         tipItems.forEach {
-            contents.add(it.content)
             tipIndies.add(Global.tabs[tabIdx].tips.indexOf(it))
+            contents.add(it.content)
         }
         val message =
             if (contents.size == 1)
                 "确定删除记录 \"${contents.first()}\" 吗？"
             else
-                "确定删除以下 ${contents.size} 条记录吗？\n${contents.joinToString("\n")}}"
+                "确定删除以下 ${contents.size} 条记录吗？\n\n${contents.joinToString("\n\n")}"
 
         val message2 =
             if (contents.size == 1)
                 "已删除 \"${contents.first()}\""
             else
                 "已删除 ${contents.size} 条记录"
-
 
         activity?.showAlert(
             title = "删除记录",
@@ -412,11 +425,11 @@ class TabFragment : Fragment(), IContextHelper {
                     view = view!!,
                     action = "撤销",
                     listener = View.OnClickListener {
-                        for (idx in 0 until contents.size) {
+                        for (idx in 0 until tipItems.size) {
                             Global.tabs[tabIdx].tips.add(tipIndies[idx], tipItems[idx])
                         }
                         refreshAfterUpdate()
-                        activity?.showSnackBar(message = "已恢复删除", view = view!!)
+                        activity?.showSnackBar(message = "已撤销删除", view = view!!)
                     }
                 )
             }}
@@ -437,7 +450,7 @@ class TabFragment : Fragment(), IContextHelper {
         tipItems.forEach { it.highLight = isHighLight }
         refreshAfterUpdate()
         val message =
-            if (isHighLight)        "已高亮 " else "已取消高亮 " +
+            if (isHighLight) "已高亮 " else "已取消高亮 " +
             if (tipItems.size == 1) "\"${contents.first()}\"" else "${tipItems.size} 条记录"
 
         activity?.showSnackBar(
@@ -449,7 +462,7 @@ class TabFragment : Fragment(), IContextHelper {
                     tipItems[idx].highLight = flags[idx]
                 }
                 refreshAfterUpdate()
-                activity?.showSnackBar(message = "已撤销操作", view = view!!)
+                activity?.showSnackBar(message = "已撤销高亮", view = view!!)
             }
         )
     }
@@ -458,30 +471,65 @@ class TabFragment : Fragment(), IContextHelper {
      * 分组内移动
      */
     private fun moveTips(tipItems: List<TipItem>) {
-        val titles: MutableList<String> = mutableListOf()
+        // 分组标题
+        val tabTitles: MutableList<String> = mutableListOf()
         for (idx in 0 until Global.tabs.size)
-            titles.add(Global.tabs[idx].title)
+            tabTitles.add(Global.tabs[idx].title)
+
+        // 原分组内位置记录
+        val indexes: MutableList<Int> = mutableListOf()
+        tipItems.forEach {
+            indexes.add(Global.tabs[tabIdx].tips.indexOf(it))
+        }
 
         activity?.showAlert(
-            title = "移动 ${if (tipItems.size == 1) "\"${tipItems.first().content}\"" else "${tipItems.size} 项"}",
-            list = titles.minus(Global.tabs[tabIdx].title).toTypedArray(),
+            title = "移动${if (tipItems.size == 1) " \"${tipItems.first().content}\" " else " ${tipItems.size} 项"}至...",
+            list = tabTitles.minus(Global.tabs[tabIdx].title).toTypedArray(),
             listener = DialogInterface.OnClickListener { _, idx -> run {
                 val fromIdx = tabIdx
-                val toIdx = titles.indexOf(titles.minus(Global.tabs[tabIdx].title)[idx])
+                val toIdx = tabTitles.indexOf(tabTitles.minus(Global.tabs[tabIdx].title)[idx])
+
                 for (tipItem in tipItems) {
-                    Global.tabs[toIdx].tips.add(tipItem)
                     Global.tabs[fromIdx].tips.remove(tipItem)
+                    Global.tabs[toIdx].tips.add(tipItem)
                 }
 
-                refreshAfterUpdate()
+                // refreshAfterUpdate()
                 (activity as? MainActivity)?.let {
+                    it.view_pager.adapter?.notifyDataSetChanged()
+                    it.view_pager.currentItem = toIdx
+
                     it.fragments[toIdx].refreshAfterUpdate()
                     it.fragments[toIdx].list_tipItem?.scrollToPosition(Global.tabs[toIdx].tips.size - 1)
+                    it.fragments[fromIdx].refreshAfterUpdate()
 
-                    it.view_pager.currentItem = toIdx
-                    it.view_pager.adapter?.notifyDataSetChanged()
+                    val message = "已移动 " +
+                        if (tipItems.size == 1) "\"${tipItems.first().content}\""
+                        else "${tipItems.size} 项"
+
+                    activity?.showSnackBar(
+                        message = message,
+                        view = it.fragments[toIdx].view!!,
+                        action = "撤销",
+                        listener = View.OnClickListener { _ -> run {
+
+                            for (i in 0 until tipItems.size) {
+                                Global.tabs[toIdx].tips.remove(tipItems[i])
+                                Global.tabs[fromIdx].tips.add(indexes[i], tipItems[i])
+                            }
+
+                            // refreshAfterUpdate()
+
+                            it.view_pager.adapter?.notifyDataSetChanged()
+                            it.view_pager.currentItem = fromIdx
+
+                            it.fragments[fromIdx].refreshAfterUpdate()
+                            it.fragments[toIdx].refreshAfterUpdate()
+
+                            activity?.showSnackBar(message = "已撤销移动", view = view!!)
+                        }}
+                    )
                 }
-
             }}
         )
     }
@@ -515,13 +563,21 @@ class TabFragment : Fragment(), IContextHelper {
      * 全选
      */
     fun selectAll() {
+
         if (listAdapter?.checkMode == null || !listAdapter?.checkMode!!) return
-
         // 多选状态
-        Global.tabs[tabIdx].tips.forEach {
-            listAdapter?.setItemChecked(it, true)
-        }
 
+        if (listAdapter?.getAllChecked()?.size != Global.tabs[tabIdx].tips.size) {
+            // 全选
+            Global.tabs[tabIdx].tips.forEach {
+                listAdapter?.setItemChecked(it, true)
+            }
+        } else {
+            // 全不选
+            Global.tabs[tabIdx].tips.forEach {
+                listAdapter?.setItemChecked(it, false)
+            }
+        }
         view?.list_tipItem?.notifyDataSetChanged()
     }
 

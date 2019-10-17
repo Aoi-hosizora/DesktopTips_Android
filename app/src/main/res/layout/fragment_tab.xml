@@ -16,13 +16,22 @@
         android:id="@+id/view_empty"
         android:visibility="gone"/>
 
-    <com.aoihosizora.desktoptips.ui.widget.RecyclerViewEmptySupport
-        android:id="@+id/list_tipItem"
-        android:layout_width="match_parent"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/srl"
         android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:divider="@null"
+        android:visibility="visible">
 
-        android:scrollbars="vertical"
-        android:visibility="visible" />
+        <com.aoihosizora.desktoptips.ui.widget.RecyclerViewEmptySupport
+            android:id="@+id/list_tipItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+
+            android:scrollbars="vertical"
+            android:visibility="visible" />
+
+    </android.support.v4.widget.SwipeRefreshLayout>
 
     <View
         android:id="@+id/view_fab_back"
