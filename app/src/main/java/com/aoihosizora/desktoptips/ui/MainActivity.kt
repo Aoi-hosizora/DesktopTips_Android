@@ -3,6 +3,8 @@ package com.aoihosizora.desktoptips.ui
 import android.content.DialogInterface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v4.app.Fragment
+import android.support.v4.view.ViewPager
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -10,7 +12,9 @@ import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
 import com.aoihosizora.desktoptips.model.Tab
 import com.aoihosizora.desktoptips.ui.adapter.TabPageAdapter
+import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.fragment_tab.*
 
 class MainActivity : AppCompatActivity(), IContextHelper {
 
@@ -28,14 +32,29 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         get() = view_pager.adapter?.instantiateItem(view_pager, view_pager.currentItem) as? TabFragment
 
     /**
+     * 所有碎片
+     */
+    val fragments: List<TabFragment>
+        get() {
+            val ret: MutableList<TabFragment> = mutableListOf()
+            for (idx in 0 until Global.tabs.size)
+                (view_pager.adapter?.instantiateItem(view_pager, idx) as? TabFragment)?.let {
+                    ret.add(it)
+                }
+            return ret.toList()
+        }
+
+    /**
      * 回退
      */
     override fun onBackPressed() {
-        val hdl1: Boolean? = currentFragment?.onKeyBack()
-        if (hdl1 != null && hdl1) return
+        val hdl: Boolean? = currentFragment?.onKeyBack()
+        if (hdl != null && hdl) return
 
         super.onBackPressed()
     }
+
+    private var currTabIdx = -1
 
     /**
      * 初始化界面，显示分栏
@@ -51,6 +70,36 @@ class MainActivity : AppCompatActivity(), IContextHelper {
 
         // Tab Layout
         view_pager.adapter = TabPageAdapter(supportFragmentManager)
+
+        view_pager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+
+            override fun onPageScrollStateChanged(state: Int) { }
+
+            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) { }
+
+            override fun onPageSelected(position: Int) {
+
+                // 未加载的 Tab
+                if (currTabIdx !in 0 until fragments.size) {
+                    currTabIdx = position
+                    return
+                }
+
+                val lastFrag = fragments[currTabIdx]
+
+                // 关闭多选
+                (lastFrag.list_tipItem?.adapter as? TipItemAdapter)?.let {
+                    if (it.checkMode)
+                        it.checkMode = false
+                }
+
+                // 关闭 Fab
+                lastFrag.fab?.collapse()
+
+                currTabIdx = position
+            }
+        })
+
         tab_layout.setupWithViewPager(view_pager)
     }
 
@@ -96,7 +145,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item!!.itemId) {
             android.R.id.home -> onBackPressed()
-            
+
             R.id.menu_add -> addTab()
             R.id.menu_delete -> deleteTab()
             R.id.menu_rename -> renameTab()

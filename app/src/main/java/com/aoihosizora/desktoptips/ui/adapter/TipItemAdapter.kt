@@ -17,7 +17,7 @@ class TipItemAdapter(
 
     private val onItemClick: (View, TipItem) -> Unit,
     private val onItemLongClick: (View, TipItem) -> Unit,
-    private val onCheckedChanged: (isCheck: Boolean, items: List<TipItem>) -> Unit
+    private val onCheckedChanged: (isCheckMode: Boolean, items: List<TipItem>) -> Unit
 
 ) : RecyclerView.Adapter<TipItemAdapter.ViewHolder>(), View.OnClickListener, View.OnLongClickListener {
 
@@ -38,13 +38,14 @@ class TipItemAdapter(
     }
 
     fun setItemChecked(tipItem: TipItem, isCheck: Boolean) {
-        if (!isCheck)
-            checkItems.remove(tipItem)
-        else
+        if (isCheck && checkItems.indexOf(tipItem) == -1)
             checkItems.add(tipItem)
+        else if (!isCheck)
+            checkItems.remove(tipItem)
+        onCheckedChanged(checkMode, checkItems)
     }
 
-    fun getAllChecked(): MutableList<TipItem> = checkItems
+    fun getAllChecked(): List<TipItem> = checkItems
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.view_tips_adapter, parent, false)
@@ -79,7 +80,7 @@ class TipItemAdapter(
                 checkItems.remove(tipItem)
 
             // 通知选中内容变更
-            onCheckedChanged(checked, checkItems)
+            onCheckedChanged(checkMode, checkItems)
         }}
     }
 

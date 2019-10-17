@@ -15,11 +15,11 @@ import com.aoihosizora.desktoptips.model.Global
 import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import kotlinx.android.synthetic.main.fragment_tab.view.*
 import android.support.v7.widget.DividerItemDecoration
-import com.aoihosizora.desktoptips.model.Tab
 import com.aoihosizora.desktoptips.model.TipItem
 import com.aoihosizora.desktoptips.util.swap
 import com.getbase.floatingactionbutton.FloatingActionsMenu
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.fragment_tab.*
 
 class TabFragment : Fragment(), IContextHelper {
 
@@ -46,12 +46,17 @@ class TabFragment : Fragment(), IContextHelper {
      */
     fun onKeyBack(): Boolean {
         view?.run {
-            // 1. Fab 展开
-            if (fab.isExpanded) {
+            // 1. Fab 蒙版展开
+            if (fab.isExpanded && view_fab_back.visibility == View.VISIBLE) {
                 fab.collapse()
                 return true
             }
-            // 2. List 多选
+
+            // 2. Fab 非蒙版展开
+            if (fab.isExpanded && view_fab_back.visibility == View.GONE)
+                fab.collapse()
+
+            // 3. List 多选
             listAdapter?.let {
                 if (it.checkMode) {
                     it.checkMode = false
@@ -84,16 +89,34 @@ class TabFragment : Fragment(), IContextHelper {
                 listAdapter?.setItemChecked(tipItem, true)
                 view.fab.expand()
             }},
-            onCheckedChanged = { isCheck, items -> run {
-                onSelectChange()
+            onCheckedChanged = { isCheckMode, items -> run {
+                // 多选可用性
 
-                (activity as? MainActivity)?.menu?.getItem(R.id.menu_select_all)?.isVisible = isCheck
-                activity?.actionBar?.setDisplayHomeAsUpEnabled(isCheck)
+                // 选中单项
+                val isCheckSingle = listAdapter != null && listAdapter!!.checkMode && listAdapter!!.getAllChecked().size == 1
+                if (isCheckSingle) {
+                    view.fab_up.visibility = View.VISIBLE
+                    view.fab_down.visibility = View.VISIBLE
+                    // 位置
+                    val allLength: Int = Global.tabs[tabIdx].tips.size                                  // 列表长度
+                    val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())   // 当前位置
+                    view.fab_up.isEnabled = pos != 0
+                    view.fab_down.isEnabled = pos != allLength - 1
+                } else {
+                    view.fab_up.visibility = View.GONE
+                    view.fab_down.visibility = View.GONE
+                }
 
-                if (isCheck) { // 多选
-                    (activity as? MainActivity)?.title = "已选择 ${items.size} / ${Global.tabs[tabIdx].tips.size} 项"
-                } else { // 单选
-                    (activity as? MainActivity)?.title = context?.getString(R.string.act_title)
+                // 标题栏
+                (activity as? MainActivity)?.run {
+
+                    menu?.findItem(R.id.menu_select_all)?.isVisible = isCheckMode
+                    supportActionBar?.setDisplayHomeAsUpEnabled(isCheckMode)
+                    title =
+                        if (isCheckMode)
+                            "已选择 ${items.size} / ${Global.tabs[tabIdx].tips.size} 项"
+                        else
+                            context?.getString(R.string.act_title)
                 }
             }}
         )
@@ -127,7 +150,37 @@ class TabFragment : Fragment(), IContextHelper {
                 if (listAdapter == null) return
 
                 // 显示相关
-                onSelectChange()
+                /////////////////////////////////////////
+
+                // 选中长度
+                val selLength: Int = listAdapter!!.getAllChecked().size
+
+                fun isShow(flag: Boolean): Int {
+                    return if (flag) View.VISIBLE else View.GONE
+                }
+
+                val isCheck = listAdapter!!.checkMode               // 选中模式
+                val isCheckSingle = isCheck && selLength == 1       // 选中单项
+                // val isCheckZero = isCheck && selLength == 0      // 选中零项
+                // val isCheckMulti = isCheck && selLength > 1      // 选中多项
+
+                view.fab_add.visibility = isShow(!isCheck)          // 非选中
+                view.fab_exit_check.visibility = isShow(isCheck)    // 选中
+                view.fab_more.visibility = isShow(isCheck)          // 选中
+                view.fab_up.visibility = isShow(isCheckSingle)      // 选中，单选
+                view.fab_down.visibility = isShow(isCheckSingle)    // 选中，单选
+
+                // 位置相关 (单选)
+
+                if (isCheckSingle) {
+                    // 列表长度
+                    val allLength: Int = Global.tabs[tabIdx].tips.size
+                    // 当前位置
+                    val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())
+
+                    view.fab_up.isEnabled = pos != 0
+                    view.fab_down.isEnabled = pos != allLength - 1
+                }
             }
         })
 
@@ -138,16 +191,16 @@ class TabFragment : Fragment(), IContextHelper {
         }
 
         view.fab_exit_check.setOnClickListener { // 退出多选
-            listAdapter?.checkMode = false
             view.fab.collapse()
+            listAdapter?.checkMode = false
         }
 
         view.fab_up.setOnClickListener { // 上移
-            moveTip(listAdapter?.getAllChecked()?.get(0), isMoveUp = true)
+            moveTip(listAdapter?.getAllChecked()?.first(), isMoveUp = true)
         }
 
         view.fab_down.setOnClickListener { // 下移
-            moveTip(listAdapter?.getAllChecked()?.get(0), isMoveUp = false)
+            moveTip(listAdapter?.getAllChecked()?.first(), isMoveUp = false)
         }
 
         view.fab_more.setOnClickListener {  // 更多
@@ -155,51 +208,6 @@ class TabFragment : Fragment(), IContextHelper {
                 onItemsClick(it.getAllChecked())
             }
             view.fab.collapse()
-        }
-    }
-
-    /**
-     * 选中情况更改，Fab Menu 显示更新
-     */
-    private fun onSelectChange() {
-        if (view == null) return
-
-        /////////////////////////////////////////
-        // 选中长度
-        val selLength: Int = listAdapter!!.getAllChecked().size
-
-        val isCheck: Boolean = listAdapter!!.checkMode
-        val isMulti: Boolean = isCheck && selLength > 1
-
-        val showIfCheck = if (isCheck) View.VISIBLE else View.GONE
-        val unShowIfCheck = if (!isCheck) View.VISIBLE else View.GONE
-        // val showIfMulti = if (isCheck && isMulti) View.VISIBLE else View.GONE
-        val unShowIfMulti = if (isCheck && !isMulti) View.VISIBLE else View.GONE
-
-        view!!.fab_add.visibility = unShowIfCheck
-        view!!.fab_exit_check.visibility = showIfCheck
-        view!!.fab_more.visibility = showIfCheck
-        view!!.fab_up.visibility = unShowIfMulti
-        view!!.fab_down.visibility = unShowIfMulti
-
-        // 以下为非多选
-        if (selLength > 1) return
-
-        /////////////////////////////////////////
-        // 位置相关
-
-        if (selLength == 0) {
-            // 没有选择
-            view!!.fab_up.isEnabled = false
-            view!!.fab_down.isEnabled = false
-        } else {
-            // 列表长度
-            val allLength: Int = Global.tabs[tabIdx].tips.size
-            // 当前位置
-            val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked()[0])
-
-            view!!.fab_up.isEnabled = pos != 0
-            view!!.fab_down.isEnabled = pos != allLength - 1
         }
     }
 
@@ -464,9 +472,16 @@ class TabFragment : Fragment(), IContextHelper {
                     Global.tabs[toIdx].tips.add(tipItem)
                     Global.tabs[fromIdx].tips.remove(tipItem)
                 }
+
                 refreshAfterUpdate()
-                activity?.view_pager?.currentItem = toIdx
-                activity?.view_pager?.adapter?.notifyDataSetChanged()
+                (activity as? MainActivity)?.let {
+                    it.fragments[toIdx].refreshAfterUpdate()
+                    it.fragments[toIdx].list_tipItem?.scrollToPosition(Global.tabs[toIdx].tips.size - 1)
+
+                    it.view_pager.currentItem = toIdx
+                    it.view_pager.adapter?.notifyDataSetChanged()
+                }
+
             }}
         )
     }
@@ -489,7 +504,7 @@ class TabFragment : Fragment(), IContextHelper {
 
             // 显示更新
             val allSize: Int = Global.tabs[tabIdx].tips.size
-            val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked()[0])
+            val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())
 
             view?.fab_up?.isEnabled     = pos != 0
             view?.fab_down?.isEnabled   = pos != allSize - 1
@@ -506,6 +521,8 @@ class TabFragment : Fragment(), IContextHelper {
         Global.tabs[tabIdx].tips.forEach {
             listAdapter?.setItemChecked(it, true)
         }
+
+        view?.list_tipItem?.notifyDataSetChanged()
     }
 
     /**

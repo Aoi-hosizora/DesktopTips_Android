@@ -62,16 +62,6 @@
         <!-- Show If Check -->
 
         <com.getbase.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_more"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:fab_icon="@drawable/ic_more_horiz_white_24dp"
-            fab:fab_colorNormal="@color/colorAccentLight"
-            fab:fab_colorPressed="@color/colorAccent"
-            app:fab_size="mini"
-            fab:fab_title="更多选项" />
-
-        <com.getbase.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_up"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -90,6 +80,16 @@
             fab:fab_colorPressed="@color/colorAccent"
             app:fab_size="mini"
             fab:fab_title="下移" />
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_more"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_icon="@drawable/ic_more_h_white_24dp"
+            fab:fab_colorNormal="@color/colorAccentLight"
+            fab:fab_colorPressed="@color/colorAccent"
+            app:fab_size="mini"
+            fab:fab_title="更多选项" />
 
         <com.getbase.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_exit_check"
