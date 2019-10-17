@@ -24,4 +24,10 @@
         android:title="@string/menu_rename_tab"
         android:icon="@drawable/ic_edit_white_24dp" />
 
+    <item
+        android:id="@+id/menu_update"
+        android:title="@string/menu_update"
+        android:icon="@drawable/ic_update_white_24dp"
+        app:showAsAction="ifRoom" />
+
 </menu>

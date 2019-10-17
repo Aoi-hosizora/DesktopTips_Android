@@ -120,12 +120,14 @@ interface IContextHelper {
     }
 
     /**
-     * Context + Message + Flag -> ProgressDialog
+     * Context + Message + Flag + Listener -> ProgressDialog
      */
-    fun Context.showProgress(context: Context, message: CharSequence, cancelable: Boolean = true): ProgressDialog {
+    fun Context.showProgress(context: Context, message: CharSequence,
+                             cancelable: Boolean = true, onCancelListener: DialogInterface.OnCancelListener? = null): ProgressDialog {
         val progressDlg = ProgressDialog(context)
         progressDlg.setMessage(message)
         progressDlg.setCancelable(cancelable)
+        progressDlg.setOnCancelListener(onCancelListener)
         progressDlg.show()
         return progressDlg
     }

@@ -1,9 +1,9 @@
 package com.aoihosizora.desktoptips.ui
 
+import android.Manifest
 import android.content.DialogInterface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.support.v4.app.Fragment
 import android.support.v4.view.ViewPager
 import android.view.Menu
 import android.view.MenuItem
@@ -15,8 +15,25 @@ import com.aoihosizora.desktoptips.ui.adapter.TabPageAdapter
 import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_tab.*
+import android.support.v4.app.ActivityCompat
+import android.content.pm.PackageManager
+import android.util.Log
+import com.aoihosizora.desktoptips.util.NetUtil
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.jwsd.libzxing.OnQRCodeScanCallback
+import com.jwsd.libzxing.QRCodeManager
+import java.lang.Exception
+import java.lang.NumberFormatException
 
 class MainActivity : AppCompatActivity(), IContextHelper {
+
+    companion object {
+        const val TAG = "MainActivity"
+        const val REQUEST_PERMISSION_CODE = 1
+
+        const val QR_CODE_MAGIC = "DESKTOP_TIPS_ANDROID://"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -149,7 +166,10 @@ class MainActivity : AppCompatActivity(), IContextHelper {
             R.id.menu_add -> addTab()
             R.id.menu_delete -> deleteTab()
             R.id.menu_rename -> renameTab()
+
             R.id.menu_select_all -> currentFragment?.selectAll()
+            R.id.menu_update -> updateData()
+
             else -> showToast(item.title)
         }
         return super.onOptionsItemSelected(item)
@@ -257,5 +277,221 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                 showToast("成功重命名为 \"${Global.tabs[view_pager.currentItem].title}\"")
             }}
         )
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * 检查相机网络权限
+     */
+    private fun checkPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions( this,
+                arrayOf(Manifest.permission.CAMERA, Manifest.permission.INTERNET),
+                REQUEST_PERMISSION_CODE
+            )
+        }
+    }
+
+    /**
+     * 更新同步
+     */
+    private fun updateData() {
+        showAlert(
+            title = "请选择同步方式 (同一局域网内)",
+            list = arrayOf("同步到桌面版", "从桌面版同步", "取消"),
+            listener = DialogInterface.OnClickListener { dialog, idx -> run {
+                when (idx) {
+                    0 -> { // 同步到桌面版
+                        updateToDesktop()
+                    }
+                    1 -> { // 从桌面版同步
+                        updateFromDesktop()
+                    }
+                    2 -> dialog.dismiss()
+                }
+            }}
+        )
+    }
+
+    /**
+     * 从桌面版同步 (本机 S <- 桌面 C)
+     *
+     * 确定端口 -> 监听本地端口 -> 等待远程发包过来 (S) -> 处理数据 保存更新
+     */
+    private fun updateFromDesktop() {
+
+        // 检查权限
+        checkPermission()
+
+        // 确定本地端口
+        showInputDlg(
+            title = "确定本地监听端口",
+            text = "8775",
+            negText = "取消",
+            posText = "监听",
+            posClick = { _, _, text -> run {
+
+                // 端口检查
+                var port = 0
+                try {
+                    port = Integer.parseInt(text)
+                    if (port !in 0 .. 65535)
+                        throw NumberFormatException()
+                } catch (ex: NumberFormatException) {
+                    ex.printStackTrace()
+                    showAlert(
+                        title = "错误",
+                        message = "输入的端口号 \"$text\" 无效。"
+                    )
+                }
+
+                var closeFlag = false
+
+                // 加载框
+                val progressDlg = showProgress(
+                    context = this,
+                    message = "等待接收数据...",
+                    cancelable = true,
+                    onCancelListener = DialogInterface.OnCancelListener {
+                        closeFlag = true
+                        it.dismiss()
+                    }
+                )
+
+                // 新线程接收信息
+                Thread(Runnable {
+                    try {
+                        // 阻塞
+                        val json = NetUtil.receiveTabs(port)
+                        if (closeFlag)                                                                      // <<< 已取消
+                            throw Exception("closeFlag")
+
+                        runOnUiThread { if (progressDlg.isShowing) progressDlg.setMessage("正在保存数据...") }
+
+                        if (json.isEmpty()) {                                                               // <<< 数据接收错误
+                            runOnUiThread { showAlert(title = "错误", message = "数据同步错误。") }
+                            throw Exception("json.isEmpty")
+                        }
+
+                        try {
+                            Global.tabs = jacksonObjectMapper().readValue(json)
+                        } catch (ex: Exception) {                                                           // <<< 数据无效
+                            runOnUiThread { showAlert(title = "错误", message = "数据无效。") }
+                            throw Exception(ex)
+                        }
+
+                        Global.saveData(this)
+
+                        // 返回结果
+                        runOnUiThread { showAlert(title = "同步数据", message = "数据同步完成。") }
+                    } catch (ex: Exception) {
+                        ex.printStackTrace()
+                    } finally {
+                        if (progressDlg.isShowing)
+                            progressDlg.dismiss()
+                    }
+
+                }).start()
+            }}
+        )
+    }
+
+    /**
+     * 同步到桌面版 (本机 C -> 桌面 S)
+     *
+     * 扫描二维码 -> 获取远程 IP Port -> 发 Socket Json 包 (C) -> 等 Ack
+     */
+    private fun updateToDesktop() {
+
+        // 检查权限
+        checkPermission()
+
+        /**
+         * 检查地址格式
+         */
+        fun checkFormat(ip: String, port: String): Boolean {
+            val ipRe = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+            val portRe = "^([0-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{4}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$"
+
+            return ip.matches(Regex(ipRe)) && port.matches(Regex(portRe))
+        }
+
+        // 二维码扫描得出地址
+        QRCodeManager.getInstance()
+            .with(this)
+            .scanningQRCode(object : OnQRCodeScanCallback {
+
+                override fun onCancel() {}
+
+                override fun onError(errorMsg: Throwable?) {
+                    showToast("二维码读取失败")
+                    Log.e(TAG, errorMsg?.message)
+                }
+
+                override fun onCompleted(result: String?) {
+                    // 地址
+                    var remoteAddress = ""
+
+                    try {
+                        if (result == null) throw Exception()                       // 数据错误
+
+                        if (!result.startsWith(QR_CODE_MAGIC)) throw Exception()    // 无特殊码
+
+                        val data = result.substring(QR_CODE_MAGIC.length)
+                        if (!data.contains(":")) throw Exception()            // 无端口
+
+                        val sp = data.split(":")
+                        if (sp.size != 2) throw Exception()                         // 格式错误
+                        if (!checkFormat(sp[0], sp[1])) throw Exception()           // 数据错误
+
+                        remoteAddress = "${sp[0]}:${sp[1]}"
+                    } catch (ex: Exception) {
+                        showToast("二维码错误")
+                        ex.printStackTrace()
+                    }
+
+                    // 获取地址
+                    if (remoteAddress.trim().isNotEmpty()) {
+
+                        // 加载框
+                        val progressDlg = showProgress(
+                            context = this@MainActivity,
+                            message = "正在发送数据",
+                            cancelable = true
+                        )
+
+                        // 获得远程地址，发包
+                        Thread(Runnable {
+                            // 阻塞
+                            val ok = NetUtil.sendTabs(remoteAddress)
+
+                            runOnUiThread {
+                                if (progressDlg.isShowing) progressDlg.dismiss()
+
+                                if (ok) // 发送成功
+                                    showAlert(title = "同步数据", message = "数据发送完成。")
+                                else // 发送失败
+                                    showAlert(title = "错误", message = "数据发送失败。")
+                            }
+                        })
+                    }
+                }
+            })
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            REQUEST_PERMISSION_CODE -> {
+                if (grantResults[0] != PackageManager.PERMISSION_GRANTED)
+                    showToast("授权失败")
+            }
+        }
     }
 }
