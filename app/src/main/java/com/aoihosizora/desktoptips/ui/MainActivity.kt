@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
     /**
      * 获取数据，初始化列表
      */
-    private fun initData() {
+    fun initData() {
         val progressDlg = showProgress(this, "加载数据中", false)
         Thread(Runnable {
             val ok = Global.loadData(this)
@@ -428,7 +428,8 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                         // 返回结果
                         runOnUiThread {
                             showAlert(title = "同步数据", message = "数据同步完成。\n\n$json")
-                            view_pager.adapter?.notifyDataSetChanged()
+                            initUI()
+                            // view_pager.adapter?.notifyDataSetChanged()
                             for (frag in fragments)
                                 frag.refreshAfterUpdate(isSaveData = false)
                         }

@@ -239,14 +239,19 @@ class TabFragment : Fragment(), IContextHelper {
 
     /**
      * 修改完数据后更新 适配器 和 存储
+     * @param isSaveData 在 initUI() 和 updateFromDesktop() 指定
      */
     fun refreshAfterUpdate(isSaveData: Boolean = true) {
-        view?.let {
+        view?.run {
 
-            (view!!.list_tipItem.adapter as? TipItemAdapter)?.tipItems = Global.tabs[tabIdx].tips
+            // Global.loadData(activity!!)
+            // (activity as? MainActivity)?.initData()
 
-            // view!!.list_tipItem.adapter?.notifyDataSetChanged()
-            view!!.list_tipItem.notifyDataSetChanged()
+            listAdapter?.tipItems = Global.tabs[tabIdx].tips
+
+            // list_tipItem.adapter?.notifyDataSetChanged()
+            list_tipItem.notifyDataSetChanged()
+
 
             // TODO 多线程后台执行
             if (isSaveData)
@@ -439,6 +444,7 @@ class TabFragment : Fragment(), IContextHelper {
             posListener = DialogInterface.OnClickListener { _, _ -> run {
                 tipItems.forEach { Global.tabs[tabIdx].tips.remove(it) }
                 refreshAfterUpdate()
+                listAdapter?.checkMode = false
 
                 activity?.showSnackBar(
                     message = message2,
@@ -446,7 +452,12 @@ class TabFragment : Fragment(), IContextHelper {
                     action = "撤销",
                     listener = View.OnClickListener {
                         for (idx in 0 until tipItems.size) {
-                            Global.tabs[tabIdx].tips.add(tipIndies[idx], tipItems[idx])
+                            try {
+                                Global.tabs[tabIdx].tips.add(tipIndies[idx], tipItems[idx])
+                            } catch (ex: Exception) {
+                                ex.printStackTrace()
+                                Global.tabs[tabIdx].tips.add(tipItems[idx])
+                            }
                         }
                         refreshAfterUpdate()
                         activity?.showSnackBar(message = "已撤销删除", view = view!!)
@@ -513,6 +524,7 @@ class TabFragment : Fragment(), IContextHelper {
                     Global.tabs[fromIdx].tips.remove(tipItem)
                     Global.tabs[toIdx].tips.add(tipItem)
                 }
+                listAdapter?.checkMode = false
 
                 // refreshAfterUpdate()
                 (activity as? MainActivity)?.let {
@@ -535,10 +547,13 @@ class TabFragment : Fragment(), IContextHelper {
 
                             for (i in 0 until tipItems.size) {
                                 Global.tabs[toIdx].tips.remove(tipItems[i])
-                                Global.tabs[fromIdx].tips.add(indexes[i], tipItems[i])
+                                try {
+                                    Global.tabs[fromIdx].tips.add(indexes[i], tipItems[i])
+                                } catch (ex: Exception) {
+                                    ex.printStackTrace()
+                                    Global.tabs[fromIdx].tips.add(tipItems[i])
+                                }
                             }
-
-                            // refreshAfterUpdate()
 
                             it.view_pager.adapter?.notifyDataSetChanged()
                             it.view_pager.currentItem = fromIdx
