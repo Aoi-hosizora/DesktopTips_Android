@@ -43,6 +43,10 @@ class RecyclerViewEmptySupport : RecyclerView {
         emptyObserver.onChanged()
     }
 
+    /**
+     * !!!
+     * 绑定 empty_view 订阅 和 适配器数据更新
+     */
     fun notifyDataSetChanged() {
         super.getAdapter()?.notifyDataSetChanged()
         emptyObserver.onChanged()

@@ -41,6 +41,6 @@ dependencies {
     // Fab
     implementation 'com.getbase:floatingactionbutton:1.10.1'
 
-//    // QR Code
-//    implementation 'com.github.jwkj:LibZXing:v1.1.2'
+    // QR Code
+    implementation 'com.github.jwkj:LibZXing:v1.1.2'
 }

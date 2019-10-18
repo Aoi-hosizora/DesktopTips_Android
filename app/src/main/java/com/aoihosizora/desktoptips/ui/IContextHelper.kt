@@ -9,7 +9,6 @@ import android.view.View
 import android.widget.Toast
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.widget.EditText
 import java.lang.Exception
 
@@ -19,7 +18,7 @@ import java.lang.Exception
 interface IContextHelper {
 
     companion object {
-        const val TAG: String = "IContextHelper"
+        // const val TAG: String = "IContextHelper"
     }
 
     /**
@@ -120,12 +119,14 @@ interface IContextHelper {
     }
 
     /**
-     * Context + Message + Flag -> ProgressDialog
+     * Context + Message + Flag + Listener -> ProgressDialog
      */
-    fun Context.showProgress(context: Context, message: CharSequence, cancelable: Boolean = true): ProgressDialog {
+    fun Context.showProgress(context: Context, message: CharSequence,
+                             cancelable: Boolean = true, onCancelListener: DialogInterface.OnCancelListener? = null): ProgressDialog {
         val progressDlg = ProgressDialog(context)
         progressDlg.setMessage(message)
         progressDlg.setCancelable(cancelable)
+        progressDlg.setOnCancelListener(onCancelListener)
         progressDlg.show()
         return progressDlg
     }
@@ -158,7 +159,7 @@ interface IContextHelper {
                 val intent = Intent(Intent.ACTION_VIEW, uri)
                 startActivity(intent)
             } catch (ex: Exception) {
-                Log.e(TAG, ex.message)
+                ex.printStackTrace()
                 continue
             }
         }

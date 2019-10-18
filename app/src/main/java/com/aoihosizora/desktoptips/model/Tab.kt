@@ -1,6 +1,9 @@
 package com.aoihosizora.desktoptips.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import java.lang.Exception
 
 data class Tab (
 
@@ -24,5 +27,36 @@ data class Tab (
             return false
         }
 
+        /**
+         * json -> list
+         * @return err -> null
+         */
+        fun fromJson(json: String): MutableList<Tab>? {
+            val obj: MutableList<Tab>
+            try {
+                obj = jacksonObjectMapper().readValue(json)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                return null
+            }
+            return obj
+        }
+
+        /**
+         * list -> json
+         * @return err -> ""
+         */
+        fun toJson(obj: MutableList<Tab>): String {
+            val str: String
+            try {
+                str = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(obj)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                return ""
+            }
+            if (str.isEmpty())
+                return ""
+            return str
+        }
     }
 }
