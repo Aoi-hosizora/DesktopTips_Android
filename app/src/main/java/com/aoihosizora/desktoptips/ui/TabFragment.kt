@@ -25,14 +25,24 @@ import kotlinx.android.synthetic.main.fragment_tab.*
 class TabFragment : Fragment(), IContextHelper {
 
     companion object {
-        const val TAB_IDX = "TAB_IDX"
+        // const val TAG = "TabFragment"
+
+        /**
+         * Bundle Arg
+         */
+        const val BDL_TAB_IDX = "BDL_TAB_IDX"
     }
+
+    // Fun: onCreateView onKeyBack initUI initFab refreshAfterUpdate onItemsClick
+    // Var: listAdapter tabIdx
+    // region 界面更新与交互
 
     private val listAdapter: TipItemAdapter?
         get() = view?.list_tipItem?.adapter as? TipItemAdapter
 
     private val tabIdx: Int by lazy {
-        arguments!!.getInt(TAB_IDX, -1)
+
+        arguments!!.getInt(BDL_TAB_IDX, -1)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -210,11 +220,11 @@ class TabFragment : Fragment(), IContextHelper {
         }
 
         view.fab_up.setOnClickListener { // 上移
-            moveTip(listAdapter?.getAllChecked()?.first(), isMoveUp = true)
+            moveUpDownTip(listAdapter?.getAllChecked()?.first(), isMoveUp = true)
         }
 
         view.fab_down.setOnClickListener { // 下移
-            moveTip(listAdapter?.getAllChecked()?.first(), isMoveUp = false)
+            moveUpDownTip(listAdapter?.getAllChecked()?.first(), isMoveUp = false)
         }
 
         view.fab_more.setOnClickListener {  // 更多
@@ -274,7 +284,7 @@ class TabFragment : Fragment(), IContextHelper {
                     "删除"            -> deleteTips(tipItems)
                     "高亮"            -> highLightTips(tipItems, true)
                     "取消高亮"         -> highLightTips(tipItems, false)
-                    "分组间移动"       -> moveTips(tipItems)
+                    "分组间移动"       -> moveTipsInGroups(tipItems)
                     "在浏览器打开"     -> openBrowserTips(tipItems)
                     "关闭"            -> dialog.dismiss()
                     else -> {
@@ -285,9 +295,13 @@ class TabFragment : Fragment(), IContextHelper {
         )
     }
 
+    // endregion 界面更新与交互
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // Fun: newTips copyTips modifyTip contentTips deleteTips highLightTips moveTipsInGroups moveUpDownTip selectAll openBrowserTips
+    // region 记录操作
 
     /**
      * 新建
@@ -470,7 +484,7 @@ class TabFragment : Fragment(), IContextHelper {
     /**
      * 分组内移动
      */
-    private fun moveTips(tipItems: List<TipItem>) {
+    private fun moveTipsInGroups(tipItems: List<TipItem>) {
         // 分组标题
         val tabTitles: MutableList<String> = mutableListOf()
         for (idx in 0 until Global.tabs.size)
@@ -537,7 +551,7 @@ class TabFragment : Fragment(), IContextHelper {
     /**
      * 上下移
      */
-    private fun moveTip(tipItem: TipItem?, isMoveUp: Boolean) {
+    private fun moveUpDownTip(tipItem: TipItem?, isMoveUp: Boolean) {
         if (tipItem != null) {
             val currIdx = Global.tabs[tabIdx].tips.indexOf(tipItem)
             val len = Global.tabs[tabIdx].tips.size
@@ -560,7 +574,7 @@ class TabFragment : Fragment(), IContextHelper {
     }
 
     /**
-     * 全选
+     * 全选 (MainAct Toolbar)
      */
     fun selectAll() {
 
@@ -606,4 +620,6 @@ class TabFragment : Fragment(), IContextHelper {
             )
         }
     }
+
+    // endregion 记录操作
 }

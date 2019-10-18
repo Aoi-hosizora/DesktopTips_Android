@@ -17,21 +17,31 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_tab.*
 import android.support.v4.app.ActivityCompat
 import android.content.pm.PackageManager
-import android.util.Log
-import com.aoihosizora.desktoptips.util.NetUtil
+import com.aoihosizora.desktoptips.service.SyncData
 import com.jwsd.libzxing.OnQRCodeScanCallback
 import com.jwsd.libzxing.QRCodeManager
 import java.lang.Exception
 import java.lang.NumberFormatException
 
-class MainActivity : AppCompatActivity(), IContextHelper {
+class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChangeListener {
 
     companion object {
-        const val TAG = "MainActivity"
+        // const val TAG = "MainActivity"
+
+        /**
+         * 相机 网络 权限申请返回码
+         */
         const val REQUEST_PERMISSION_CODE = 1
 
+        /**
+         * 二维码 特殊前缀码
+         */
         const val QR_CODE_MAGIC = "DESKTOP_TIPS_ANDROID://"
     }
+
+    // Fun: onCreate onBackPressed initUI initData onCreateOptionsMenu
+    // Var: currentFragment fragments menu
+    // region 界面初始
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,7 +79,6 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         super.onBackPressed()
     }
 
-    private var currTabIdx = -1
 
     /**
      * 初始化界面，显示分栏
@@ -86,34 +95,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         // Tab Layout
         view_pager.adapter = TabPageAdapter(supportFragmentManager)
 
-        view_pager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
-
-            override fun onPageScrollStateChanged(state: Int) { }
-
-            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) { }
-
-            override fun onPageSelected(position: Int) {
-
-                // 未加载的 Tab
-                if (currTabIdx !in 0 until fragments.size) {
-                    currTabIdx = position
-                    return
-                }
-
-                val lastFrag = fragments[currTabIdx]
-
-                // 关闭多选
-                (lastFrag.list_tipItem?.adapter as? TipItemAdapter)?.let {
-                    if (it.checkMode)
-                        it.checkMode = false
-                }
-
-                // 关闭 Fab
-                lastFrag.fab?.collapse()
-
-                currTabIdx = position
-            }
-        })
+        view_pager.addOnPageChangeListener(this)
 
         tab_layout.setupWithViewPager(view_pager)
     }
@@ -154,6 +136,46 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         return true
     }
 
+    // endregion 界面初始
+
+    // Fun: onPageSelected onOptionsItemSelected
+    // Var: currTabIdx
+    // region 界面交互
+
+    override fun onPageScrollStateChanged(state: Int) { }
+
+    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) { }
+
+    /**
+     * 当前分组号 (onPageSelected 用)
+     */
+    private var currTabIdx = -1
+
+    /**
+     * TabLayout 当前分组更换 (用 currTabIdx)
+     */
+    override fun onPageSelected(position: Int) {
+
+        // 未加载的 Tab
+        if (currTabIdx !in 0 until fragments.size) {
+            currTabIdx = position
+            return
+        }
+
+        val lastFrag = fragments[currTabIdx]
+
+        // 关闭多选
+        (lastFrag.list_tipItem?.adapter as? TipItemAdapter)?.let {
+            if (it.checkMode)
+                it.checkMode = false
+        }
+
+        // 关闭 Fab
+        lastFrag.fab?.collapse()
+
+        currTabIdx = position
+    }
+
     /**
      * 菜单点击
      */
@@ -173,9 +195,13 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         return super.onOptionsItemSelected(item)
     }
 
+    // endregion 界面交互
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // Fun: addTab deleteTab renameTab
+    // region 分组操作
 
     /**
      * 新建分组
@@ -277,23 +303,13 @@ class MainActivity : AppCompatActivity(), IContextHelper {
         )
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // endregion 分组操作
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /**
-     * 检查相机网络权限
-     */
-    private fun checkPermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions( this,
-                arrayOf(Manifest.permission.CAMERA, Manifest.permission.INTERNET),
-                REQUEST_PERMISSION_CODE
-            )
-        }
-    }
+    // Fun: updateData updateFromDesktop updateToDesktop
+    // region 同步操作
 
     /**
      * 更新同步
@@ -301,14 +317,14 @@ class MainActivity : AppCompatActivity(), IContextHelper {
     private fun updateData() {
         showAlert(
             title = "请选择同步方式 (同一局域网内)",
-            list = arrayOf("同步到桌面版", "从桌面版同步", "取消"),
+            list = arrayOf("从桌面版同步", "同步到桌面版", "取消"),
             listener = DialogInterface.OnClickListener { dialog, idx -> run {
                 when (idx) {
-                    0 -> { // 同步到桌面版
-                        updateToDesktop()
-                    }
-                    1 -> { // 从桌面版同步
+                    0 -> { // 从桌面版同步
                         updateFromDesktop()
+                    }
+                    1 -> { // 同步到桌面版
+                        updateToDesktop()
                     }
                     2 -> dialog.dismiss()
                 }
@@ -366,7 +382,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                 Thread(Runnable {
                     try {
                         // 阻塞
-                        val json = NetUtil.receiveTabs(port)
+                        val json = SyncData.receiveTabs(port)
                         if (closeFlag)                                                                      // <<< 已取消
                             throw Exception("closeFlag")
 
@@ -433,7 +449,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
 
                 override fun onError(errorMsg: Throwable?) {
                     showToast("二维码读取失败")
-                    Log.e(TAG, errorMsg?.message)
+                    errorMsg?.printStackTrace()
                 }
 
                 override fun onCompleted(result: String?) {
@@ -472,7 +488,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                     // 获得远程地址，发包
                     Thread(Runnable {
                         // 阻塞
-                        val ok = NetUtil.sendTabs(ip, port)
+                        val ok = SyncData.sendTabs(ip, port)
 
                         // 获得结果
                         runOnUiThread {
@@ -488,6 +504,25 @@ class MainActivity : AppCompatActivity(), IContextHelper {
             })
     }
 
+    // endregion 同步操作
+
+    // Fun: checkPermission onRequestPermissionsResult
+    // region 权限获取
+
+    /**
+     * 检查相机网络权限
+     */
+    private fun checkPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions( this,
+                arrayOf(Manifest.permission.CAMERA, Manifest.permission.INTERNET),
+                REQUEST_PERMISSION_CODE
+            )
+        }
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
@@ -498,4 +533,6 @@ class MainActivity : AppCompatActivity(), IContextHelper {
             }
         }
     }
+
+    // endregion 权限获取
 }

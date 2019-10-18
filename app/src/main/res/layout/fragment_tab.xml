@@ -50,7 +50,7 @@
         app:layout_dodgeInsetEdges="bottom"
 
         fab:fab_addButtonColorNormal="@color/colorAccent"
-        fab:fab_addButtonColorPressed="@drawable/fab_menu_pressed"
+        fab:fab_addButtonColorPressed="@color/colorAccentDark"
         fab:fab_addButtonPlusIconColor="@color/white"
 
         fab:fab_labelStyle="@style/fab_menu_labels_style"
@@ -65,7 +65,7 @@
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_add_white_24dp"
             fab:fab_colorNormal="@color/colorAccentLight"
-            fab:fab_colorPressed="@drawable/fab_button_pressed"
+            fab:fab_colorPressed="@color/colorAccent"
             fab:fab_title="新建" />
 
         <!-- Show If Check -->
@@ -76,7 +76,7 @@
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_arrow_upward_white_24dp"
             fab:fab_colorNormal="@color/colorAccentLight"
-            fab:fab_colorPressed="@drawable/fab_button_pressed"
+            fab:fab_colorPressed="@color/colorAccent"
             app:fab_size="mini"
             fab:fab_title="上移" />
 
@@ -86,7 +86,7 @@
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_arrow_downward_white_24dp"
             fab:fab_colorNormal="@color/colorAccentLight"
-            fab:fab_colorPressed="@drawable/fab_button_pressed"
+            fab:fab_colorPressed="@color/colorAccent"
             app:fab_size="mini"
             fab:fab_title="下移" />
 
@@ -96,7 +96,7 @@
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_more_h_white_24dp"
             fab:fab_colorNormal="@color/colorAccentLight"
-            fab:fab_colorPressed="@drawable/fab_button_pressed"
+            fab:fab_colorPressed="@color/colorAccent"
             app:fab_size="mini"
             fab:fab_title="更多选项" />
 
@@ -106,7 +106,7 @@
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_clear_all_white_24dp"
             fab:fab_colorNormal="@color/colorAccentLight"
-            fab:fab_colorPressed="@drawable/fab_button_pressed"
+            fab:fab_colorPressed="@color/colorAccent"
             app:fab_size="mini"
             fab:fab_title="退出多选" />
 

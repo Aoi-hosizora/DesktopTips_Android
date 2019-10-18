@@ -1,4 +1,4 @@
-package com.aoihosizora.desktoptips.util
+package com.aoihosizora.desktoptips.service
 
 import android.support.annotation.WorkerThread
 import com.aoihosizora.desktoptips.model.Global
@@ -10,12 +10,12 @@ import java.lang.Exception
 import java.net.ServerSocket
 import java.net.Socket
 
-class NetUtil {
+class SyncData {
 
     companion object {
 
         /**
-         * 同步本地 (updateFromDesktop)
+         * 同步本地 (updateFromDesktop) (本机 S <- 桌面 C)
          *
          * 确定端口 -> 监听本地地址 -> 电脑端发送 -> 本地接受处理
          */
@@ -40,7 +40,7 @@ class NetUtil {
         }
 
         /**
-         * 同步远程 (updateToDesktop)
+         * 同步远程 (updateToDesktop) (本机 C -> 桌面 S)
          *
          * 远程监听地址 -> 确定远程地址 -> 本地发送数据 -> 等待 ACK
          */

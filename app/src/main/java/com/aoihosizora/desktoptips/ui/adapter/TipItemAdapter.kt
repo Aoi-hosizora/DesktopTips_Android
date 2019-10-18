@@ -21,6 +21,9 @@ class TipItemAdapter(
 
 ) : RecyclerView.Adapter<TipItemAdapter.ViewHolder>(), View.OnClickListener, View.OnLongClickListener {
 
+    /**
+     * 多选模式
+     */
     var checkMode = false
         set(value) {
             field = value
@@ -31,12 +34,19 @@ class TipItemAdapter(
             onCheckedChanged(value, checkItems)
         }
 
+    /**
+     * 当前选中项
+     * checkMode 为 false 时清空
+     */
     private val checkItems: MutableList<TipItem> = mutableListOf()
 
     init {
         onCheckedChanged(checkMode, checkItems)
     }
 
+    /**
+     * 设置选中
+     */
     fun setItemChecked(tipItem: TipItem, isCheck: Boolean) {
         if (isCheck && checkItems.indexOf(tipItem) == -1)
             checkItems.add(tipItem)
@@ -45,8 +55,14 @@ class TipItemAdapter(
         onCheckedChanged(checkMode, checkItems)
     }
 
+    /**
+     * 获得所有选中
+     */
     fun getAllChecked(): List<TipItem> = checkItems
 
+    /**
+     * 初始化 VIEW 和 点击事件
+     */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.view_tips_adapter, parent, false)
 
@@ -56,6 +72,9 @@ class TipItemAdapter(
         return ViewHolder(view)
     }
 
+    /**
+     * 绑定 ViewHolder 和界面显示
+     */
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         // holder.setIsRecyclable(false)
 
@@ -86,6 +105,9 @@ class TipItemAdapter(
 
     override fun getItemCount(): Int = tipItems.size
 
+    /**
+     * 单击 忽略多选
+     */
     override fun onClick(view: View?) {
         if (!checkMode)
             view?.let { onItemClick(it, it.tag as TipItem) }
@@ -95,6 +117,9 @@ class TipItemAdapter(
             }
     }
 
+    /**
+     * 长按，忽略多选
+     */
     override fun onLongClick(view: View?): Boolean {
         if (!checkMode)
             view?.let { onItemLongClick(it, it.tag as TipItem) }

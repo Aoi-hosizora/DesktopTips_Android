@@ -29,6 +29,7 @@ data class Tab (
 
         /**
          * json -> list
+         * @return err -> null
          */
         fun fromJson(json: String): MutableList<Tab>? {
             val obj: MutableList<Tab>
@@ -43,6 +44,7 @@ data class Tab (
 
         /**
          * list -> json
+         * @return err -> ""
          */
         fun toJson(obj: MutableList<Tab>): String {
             val str: String

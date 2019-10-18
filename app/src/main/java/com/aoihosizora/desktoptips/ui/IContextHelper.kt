@@ -9,7 +9,6 @@ import android.view.View
 import android.widget.Toast
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.widget.EditText
 import java.lang.Exception
 
@@ -19,7 +18,7 @@ import java.lang.Exception
 interface IContextHelper {
 
     companion object {
-        const val TAG: String = "IContextHelper"
+        // const val TAG: String = "IContextHelper"
     }
 
     /**
@@ -160,7 +159,7 @@ interface IContextHelper {
                 val intent = Intent(Intent.ACTION_VIEW, uri)
                 startActivity(intent)
             } catch (ex: Exception) {
-                Log.e(TAG, ex.message)
+                ex.printStackTrace()
                 continue
             }
         }

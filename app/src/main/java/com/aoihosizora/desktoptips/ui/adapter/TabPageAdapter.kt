@@ -11,7 +11,7 @@ class TabPageAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
 
     override fun getItem(position: Int): Fragment {
         val arg = Bundle()
-        arg.putInt(TabFragment.TAB_IDX, position)
+        arg.putInt(TabFragment.BDL_TAB_IDX, position)
 
         val tabFrag = TabFragment()
         tabFrag.arguments = arg

@@ -2,15 +2,11 @@ package com.aoihosizora.desktoptips.model
 
 import android.content.Context
 import android.support.annotation.WorkerThread
-import android.util.Log
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import java.io.File
-import java.lang.Exception
 
 object Global {
 
-    private const val TAG = "Global"
+    // private const val TAG = "Global"
     private const val FILE_NAME = "data.json"
 
     var tabs: MutableList<Tab> = mutableListOf(
