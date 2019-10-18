@@ -13,7 +13,7 @@ import kotlinx.android.synthetic.main.view_tips_adapter.view.*
 class TipItemAdapter(
 
     private val context: Context,
-    private val tipItems: List<TipItem>,
+    var tipItems: List<TipItem>,
 
     private val onItemClick: (View, TipItem) -> Unit,
     private val onItemLongClick: (View, TipItem) -> Unit,

@@ -2,6 +2,7 @@ package com.aoihosizora.desktoptips.ui
 
 import android.Manifest
 import android.content.DialogInterface
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v4.view.ViewPager
@@ -342,10 +343,17 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
         // 检查权限
         checkPermission()
 
+        val lanIp = SyncData.getLanIp()
+
+        if (lanIp.isEmpty()) {
+            showAlert(title = "错误", message = "本机获取局域网内地址错误")
+            return
+        }
+
         // 确定本地端口
         showInputDlg(
-            title = "确定本地监听端口",
-            text = "8775",
+            title = "确定本地监听端口 (本机局域网内地址为 $lanIp)",
+            text = "8776",
             negText = "取消",
             posText = "监听",
             posClick = { _, _, text -> run {
@@ -370,11 +378,16 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                 // 加载框
                 val progressDlg = showProgress(
                     context = this,
-                    message = "等待接收数据...",
+                    message = "等待接收数据...\n(监听地址为 $lanIp:$port)",
                     cancelable = true,
                     onCancelListener = DialogInterface.OnCancelListener {
                         closeFlag = true
                         it.dismiss()
+                        SyncData.rcvServerSocket?.run {
+                            if (!isClosed) close()
+                        }
+
+                        showToast("已取消同步")
                     }
                 )
 
@@ -385,6 +398,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                         val json = SyncData.receiveTabs(port)
                         if (closeFlag)                                                                      // <<< 已取消
                             throw Exception("closeFlag")
+
+                        // runOnUiThread { showAlert("", json) }
+                        // return@Runnable
 
                         // 获得数据
                         runOnUiThread { if (progressDlg.isShowing) progressDlg.setMessage("正在保存数据...") }
@@ -407,12 +423,25 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                         Global.saveData(this)
 
                         // 返回结果
-                        runOnUiThread { showAlert(title = "同步数据", message = "数据同步完成。") }
+                        runOnUiThread {
+                            showAlert(title = "同步数据", message = "数据同步完成。\n\n$json")
+                            view_pager.adapter?.notifyDataSetChanged()
+                            for (frag in fragments) {
+                                frag.listAdapter?.let {
+                                    it.tipItems = Global.tabs[fragments.indexOf(frag)].tips
+                                    it.notifyDataSetChanged()
+                                }
+                                frag.list_tipItem?.notifyDataSetChanged()
+                            }
+                        }
                     } catch (ex: Exception) {
                         ex.printStackTrace()
                     } finally {
-                        if (progressDlg.isShowing)
+                        try {
                             progressDlg.dismiss()
+                        } catch (ex: Exception) {
+                            ex.printStackTrace()
+                        }
                     }
 
                 }).start()
@@ -445,7 +474,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
             .with(this)
             .scanningQRCode(object : OnQRCodeScanCallback {
 
-                override fun onCancel() {}
+                override fun onCancel() {
+                    showToast("已取消操作")
+                }
 
                 override fun onError(errorMsg: Throwable?) {
                     showToast("二维码读取失败")
@@ -453,6 +484,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                 }
 
                 override fun onCompleted(result: String?) {
+
                     // 地址
                     val ip: String
                     val port: Int
@@ -469,7 +501,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                         if (sp.size != 2) throw Exception()                         // 格式错误
                         if (!checkFormat(sp[0], sp[1])) throw Exception()           // 数据错误
                         ip = sp[0]
-                        port = Integer.parseInt(ip[1].toString())
+                        port = sp[1].toInt()
                     } catch (ex: Exception) {
                         showToast("二维码无效")
                         ex.printStackTrace()
@@ -478,11 +510,22 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
 
                     // 获取地址
 
+                    var closeFlag = false
+
                     // 加载框
                     val progressDlg = showProgress(
                         context = this@MainActivity,
-                        message = "正在发送数据",
-                        cancelable = true
+                        message = "正在发送数据...",
+                        cancelable = true,
+                        onCancelListener = DialogInterface.OnCancelListener {
+                            closeFlag = true
+                            SyncData.sendClientSocket?.run {
+                                if (!isClosed)
+                                    close()
+                            }
+                            it.dismiss()
+                            showToast("已取消同步")
+                        }
                     )
 
                     // 获得远程地址，发包
@@ -490,18 +533,32 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                         // 阻塞
                         val ok = SyncData.sendTabs(ip, port)
 
+                        if (closeFlag) return@Runnable
+
                         // 获得结果
                         runOnUiThread {
-                            if (progressDlg.isShowing) progressDlg.dismiss()
+                            try {
+                                progressDlg.dismiss()
+                            } catch (ex: Exception) {
+                                ex.printStackTrace()
+                            }
 
                             if (ok) // 发送成功
                                 showAlert(title = "同步数据", message = "数据发送完成。")
                             else // 发送失败
                                 showAlert(title = "错误", message = "数据发送失败。")
                         }
-                    })
+                    }).start()
                 }
             })
+    }
+
+    /**
+     * 注册 QRCodeManager
+     */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        QRCodeManager.getInstance().with(this).onActivityResult(requestCode, resultCode, data)
     }
 
     // endregion 同步操作

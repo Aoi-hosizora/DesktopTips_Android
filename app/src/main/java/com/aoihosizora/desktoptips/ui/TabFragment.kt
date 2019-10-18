@@ -37,7 +37,7 @@ class TabFragment : Fragment(), IContextHelper {
     // Var: listAdapter tabIdx
     // region 界面更新与交互
 
-    private val listAdapter: TipItemAdapter?
+    val listAdapter: TipItemAdapter?
         get() = view?.list_tipItem?.adapter as? TipItemAdapter
 
     private val tabIdx: Int by lazy {
@@ -87,10 +87,15 @@ class TabFragment : Fragment(), IContextHelper {
         view.srl.setColorSchemeResources(R.color.colorAccent)
         view.srl.setOnRefreshListener {
             Handler().postDelayed({
+                listAdapter?.let {
+                    it.tipItems = Global.tabs[tabIdx].tips
+                }
                 view.list_tipItem.notifyDataSetChanged()
                 view.srl.isRefreshing = false
             }, 100)
         }
+
+        // view.srl.isRefreshing = true
 
         // Fab
         initFab(view)
