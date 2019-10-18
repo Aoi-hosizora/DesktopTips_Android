@@ -1,6 +1,14 @@
 package com.aoihosizora.desktoptips.util
 
 import android.support.annotation.WorkerThread
+import com.aoihosizora.desktoptips.model.Global
+import com.aoihosizora.desktoptips.model.Tab
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.PrintWriter
+import java.lang.Exception
+import java.net.ServerSocket
+import java.net.Socket
 
 class NetUtil {
 
@@ -13,7 +21,21 @@ class NetUtil {
          */
         @WorkerThread
         fun receiveTabs(port: Int): String {
-            // TODO
+            try {
+                val server = ServerSocket(port, 1)
+                while (true) {
+                    val client: Socket = server.accept()
+
+                    val input = BufferedReader(InputStreamReader(client.getInputStream()))
+                    val json: String = input.readText()
+                    input.close()
+                    client.close()
+
+                    return json
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
             return ""
         }
 
@@ -23,9 +45,21 @@ class NetUtil {
          * 远程监听地址 -> 确定远程地址 -> 本地发送数据 -> 等待 ACK
          */
         @WorkerThread
-        fun sendTabs(address: String): Boolean {
-            // TODO
-            return true
+        fun sendTabs(ip: String, port: Int): Boolean {
+            try {
+                val socket = Socket(ip, port)
+                val writer = PrintWriter(socket.getOutputStream(), true)
+
+                val json = Tab.toJson(Global.tabs)
+                if (json.isNotEmpty()) {
+                    writer.println(json)
+                    socket.close()
+                    return true
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+            return false
         }
     }
 }

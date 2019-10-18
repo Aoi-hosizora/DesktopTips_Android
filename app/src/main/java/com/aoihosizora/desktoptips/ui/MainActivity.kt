@@ -19,8 +19,6 @@ import android.support.v4.app.ActivityCompat
 import android.content.pm.PackageManager
 import android.util.Log
 import com.aoihosizora.desktoptips.util.NetUtil
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.jwsd.libzxing.OnQRCodeScanCallback
 import com.jwsd.libzxing.QRCodeManager
 import java.lang.Exception
@@ -337,7 +335,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
             posClick = { _, _, text -> run {
 
                 // 端口检查
-                var port = 0
+                val port: Int
                 try {
                     port = Integer.parseInt(text)
                     if (port !in 0 .. 65535)
@@ -348,6 +346,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                         title = "错误",
                         message = "输入的端口号 \"$text\" 无效。"
                     )
+                    return@showInputDlg
                 }
 
                 var closeFlag = false
@@ -371,6 +370,7 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                         if (closeFlag)                                                                      // <<< 已取消
                             throw Exception("closeFlag")
 
+                        // 获得数据
                         runOnUiThread { if (progressDlg.isShowing) progressDlg.setMessage("正在保存数据...") }
 
                         if (json.isEmpty()) {                                                               // <<< 数据接收错误
@@ -378,13 +378,16 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                             throw Exception("json.isEmpty")
                         }
 
-                        try {
-                            Global.tabs = jacksonObjectMapper().readValue(json)
-                        } catch (ex: Exception) {                                                           // <<< 数据无效
+                        // 反序列化
+                        val rcv = Tab.fromJson(json)
+                        if (rcv != null) {
+                            Global.tabs = rcv
+                        } else {                                                                            // <<< 数据无效
                             runOnUiThread { showAlert(title = "错误", message = "数据无效。") }
-                            throw Exception(ex)
+                            throw Exception("fromJson")
                         }
 
+                        // 保存数据
                         Global.saveData(this)
 
                         // 返回结果
@@ -435,7 +438,8 @@ class MainActivity : AppCompatActivity(), IContextHelper {
 
                 override fun onCompleted(result: String?) {
                     // 地址
-                    var remoteAddress = ""
+                    val ip: String
+                    val port: Int
 
                     try {
                         if (result == null) throw Exception()                       // 数据错误
@@ -448,38 +452,38 @@ class MainActivity : AppCompatActivity(), IContextHelper {
                         val sp = data.split(":")
                         if (sp.size != 2) throw Exception()                         // 格式错误
                         if (!checkFormat(sp[0], sp[1])) throw Exception()           // 数据错误
-
-                        remoteAddress = "${sp[0]}:${sp[1]}"
+                        ip = sp[0]
+                        port = Integer.parseInt(ip[1].toString())
                     } catch (ex: Exception) {
-                        showToast("二维码错误")
+                        showToast("二维码无效")
                         ex.printStackTrace()
+                        return
                     }
 
                     // 获取地址
-                    if (remoteAddress.trim().isNotEmpty()) {
 
-                        // 加载框
-                        val progressDlg = showProgress(
-                            context = this@MainActivity,
-                            message = "正在发送数据",
-                            cancelable = true
-                        )
+                    // 加载框
+                    val progressDlg = showProgress(
+                        context = this@MainActivity,
+                        message = "正在发送数据",
+                        cancelable = true
+                    )
 
-                        // 获得远程地址，发包
-                        Thread(Runnable {
-                            // 阻塞
-                            val ok = NetUtil.sendTabs(remoteAddress)
+                    // 获得远程地址，发包
+                    Thread(Runnable {
+                        // 阻塞
+                        val ok = NetUtil.sendTabs(ip, port)
 
-                            runOnUiThread {
-                                if (progressDlg.isShowing) progressDlg.dismiss()
+                        // 获得结果
+                        runOnUiThread {
+                            if (progressDlg.isShowing) progressDlg.dismiss()
 
-                                if (ok) // 发送成功
-                                    showAlert(title = "同步数据", message = "数据发送完成。")
-                                else // 发送失败
-                                    showAlert(title = "错误", message = "数据发送失败。")
-                            }
-                        })
-                    }
+                            if (ok) // 发送成功
+                                showAlert(title = "同步数据", message = "数据发送完成。")
+                            else // 发送失败
+                                showAlert(title = "错误", message = "数据发送失败。")
+                        }
+                    })
                 }
             })
     }
