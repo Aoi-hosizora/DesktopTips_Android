@@ -334,7 +334,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
     }
 
     /**
-     * 从桌面版同步 (本机 S <- 桌面 C)
+     * 从桌面版同步 (本机 S <- 桌面 C) !!! 常用
      *
      * 确定端口 -> 监听本地端口 -> 等待远程发包过来 (S) -> 处理数据 保存更新
      */
@@ -396,24 +396,27 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                     try {
                         // 阻塞
                         val json = SyncData.receiveTabs(port)
-                        if (closeFlag)                                                                      // <<< 已取消
+                        if (closeFlag) {                                                                    // <<< 已取消
+                            runOnUiThread { if (progressDlg.isShowing) progressDlg.dismiss() }
                             throw Exception("closeFlag")
+                        }
 
                         // runOnUiThread { showAlert("", json) }
                         // return@Runnable
 
-                        // 获得数据
-                        runOnUiThread { if (progressDlg.isShowing) progressDlg.setMessage("正在保存数据...") }
-
                         if (json.isEmpty()) {                                                               // <<< 数据接收错误
-                            runOnUiThread { showAlert(title = "错误", message = "数据同步错误。") }
+                            runOnUiThread { showAlert(title = "错误", message = "数据接收错误。") }
                             throw Exception("json.isEmpty")
                         }
+
+                        // 获得数据
+                        runOnUiThread { if (progressDlg.isShowing) progressDlg.setMessage("正在保存数据...") }
 
                         // 反序列化
                         val rcv = Tab.fromJson(json)
                         if (rcv != null) {
                             Global.tabs = rcv
+                            Global.saveData(this@MainActivity)
                         } else {                                                                            // <<< 数据无效
                             runOnUiThread { showAlert(title = "错误", message = "数据无效。") }
                             throw Exception("fromJson")
@@ -426,13 +429,8 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                         runOnUiThread {
                             showAlert(title = "同步数据", message = "数据同步完成。\n\n$json")
                             view_pager.adapter?.notifyDataSetChanged()
-                            for (frag in fragments) {
-                                frag.listAdapter?.let {
-                                    it.tipItems = Global.tabs[fragments.indexOf(frag)].tips
-                                    it.notifyDataSetChanged()
-                                }
-                                frag.list_tipItem?.notifyDataSetChanged()
-                            }
+                            for (frag in fragments)
+                                frag.refreshAfterUpdate(isSaveData = false)
                         }
                     } catch (ex: Exception) {
                         ex.printStackTrace()
@@ -450,7 +448,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
     }
 
     /**
-     * 同步到桌面版 (本机 C -> 桌面 S)
+     * 同步到桌面版 (本机 C -> 桌面 S) !!! 危险
      *
      * 扫描二维码 -> 获取远程 IP Port -> 发 Socket Json 包 (C) -> 等 Ack
      */
@@ -520,8 +518,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                         onCancelListener = DialogInterface.OnCancelListener {
                             closeFlag = true
                             SyncData.sendClientSocket?.run {
-                                if (!isClosed)
-                                    close()
+                                if (!isClosed) close()
                             }
                             it.dismiss()
                             showToast("已取消同步")
@@ -533,8 +530,6 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                         // 阻塞
                         val ok = SyncData.sendTabs(ip, port)
 
-                        if (closeFlag) return@Runnable
-
                         // 获得结果
                         runOnUiThread {
                             try {
@@ -542,6 +537,8 @@ class MainActivity : AppCompatActivity(), IContextHelper, ViewPager.OnPageChange
                             } catch (ex: Exception) {
                                 ex.printStackTrace()
                             }
+
+                            if (closeFlag) return@runOnUiThread
 
                             if (ok) // 发送成功
                                 showAlert(title = "同步数据", message = "数据发送完成。")

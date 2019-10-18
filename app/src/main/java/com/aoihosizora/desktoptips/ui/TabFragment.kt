@@ -37,11 +37,10 @@ class TabFragment : Fragment(), IContextHelper {
     // Var: listAdapter tabIdx
     // region 界面更新与交互
 
-    val listAdapter: TipItemAdapter?
+    private val listAdapter: TipItemAdapter?
         get() = view?.list_tipItem?.adapter as? TipItemAdapter
 
     private val tabIdx: Int by lazy {
-
         arguments!!.getInt(BDL_TAB_IDX, -1)
     }
 
@@ -83,19 +82,17 @@ class TabFragment : Fragment(), IContextHelper {
      */
     private fun initUI(view: View) {
 
+        // Data
+        refreshAfterUpdate(isSaveData = false)
+
         // Srl
         view.srl.setColorSchemeResources(R.color.colorAccent)
         view.srl.setOnRefreshListener {
             Handler().postDelayed({
-                listAdapter?.let {
-                    it.tipItems = Global.tabs[tabIdx].tips
-                }
-                view.list_tipItem.notifyDataSetChanged()
+                refreshAfterUpdate(isSaveData = false)
                 view.srl.isRefreshing = false
-            }, 100)
+            }, 150)
         }
-
-        // view.srl.isRefreshing = true
 
         // Fab
         initFab(view)
@@ -243,13 +240,17 @@ class TabFragment : Fragment(), IContextHelper {
     /**
      * 修改完数据后更新 适配器 和 存储
      */
-    private fun refreshAfterUpdate() {
+    fun refreshAfterUpdate(isSaveData: Boolean = true) {
         view?.let {
-            view?.list_tipItem?.notifyDataSetChanged()
-            listAdapter?.notifyDataSetChanged()
+
+            (view!!.list_tipItem.adapter as? TipItemAdapter)?.tipItems = Global.tabs[tabIdx].tips
+
+            // view!!.list_tipItem.adapter?.notifyDataSetChanged()
+            view!!.list_tipItem.notifyDataSetChanged()
 
             // TODO 多线程后台执行
-            Global.saveData(activity!!)
+            if (isSaveData)
+                Global.saveData(activity!!)
         }
     }
 
