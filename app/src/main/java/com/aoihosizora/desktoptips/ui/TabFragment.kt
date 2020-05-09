@@ -7,26 +7,24 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.Fragment
+import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.aoihosizora.desktoptips.R
 import com.aoihosizora.desktoptips.model.Global
-import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
-import kotlinx.android.synthetic.main.fragment_tab.view.*
-import android.support.v7.widget.DividerItemDecoration
 import com.aoihosizora.desktoptips.model.TipItem
+import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import com.aoihosizora.desktoptips.util.swap
 import com.getbase.floatingactionbutton.FloatingActionsMenu
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_tab.*
+import kotlinx.android.synthetic.main.fragment_tab.view.*
 
 class TabFragment : Fragment(), IContextHelper {
 
     companion object {
-        // const val TAG = "TabFragment"
-
         /**
          * Bundle Arg
          */
@@ -44,7 +42,11 @@ class TabFragment : Fragment(), IContextHelper {
         arguments!!.getInt(BDL_TAB_IDX, -1)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val view = inflater.inflate(R.layout.fragment_tab, container, false)
         initUI(view)
         return view
@@ -100,48 +102,61 @@ class TabFragment : Fragment(), IContextHelper {
         // List
         view.list_tipItem.setEmptyView(view.view_empty)
         view.list_tipItem.layoutManager = LinearLayoutManager(activity)
-        view.list_tipItem.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+        view.list_tipItem.addItemDecoration(
+            DividerItemDecoration(
+                context,
+                DividerItemDecoration.VERTICAL
+            )
+        )
 
         val listAdapter = TipItemAdapter(
             context = context!!,
             tipItems = Global.tabs[tabIdx].tips,
-            
+
             onItemClick = { _, tipItem -> onItemsClick(listOf(tipItem)) },
-            onItemLongClick = { _, tipItem -> run {
-                listAdapter?.checkMode = true
-                listAdapter?.setItemChecked(tipItem, true)
-                view.fab.expand()
-            }},
-            onCheckedChanged = { isCheckMode, items -> run {
-                // 多选可用性
-
-                // 选中单项
-                val isCheckSingle = listAdapter != null && listAdapter!!.checkMode && listAdapter!!.getAllChecked().size == 1
-                if (isCheckSingle) {
-                    view.fab_up.visibility = View.VISIBLE
-                    view.fab_down.visibility = View.VISIBLE
-                    // 位置
-                    val allLength: Int = Global.tabs[tabIdx].tips.size                                  // 列表长度
-                    val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())   // 当前位置
-                    view.fab_up.isEnabled = pos != 0
-                    view.fab_down.isEnabled = pos != allLength - 1
-                } else {
-                    view.fab_up.visibility = View.GONE
-                    view.fab_down.visibility = View.GONE
+            onItemLongClick = { _, tipItem ->
+                run {
+                    listAdapter?.checkMode = true
+                    listAdapter?.setItemChecked(tipItem, true)
+                    view.fab.expand()
                 }
+            },
+            onCheckedChanged = { isCheckMode, items ->
+                run {
+                    // 多选可用性
 
-                // 标题栏
-                (activity as? MainActivity)?.run {
+                    // 选中单项
+                    val isCheckSingle =
+                        listAdapter != null && listAdapter!!.checkMode && listAdapter!!.getAllChecked().size == 1
+                    if (isCheckSingle) {
+                        view.fab_up.visibility = View.VISIBLE
+                        view.fab_down.visibility = View.VISIBLE
+                        // 位置
+                        val allLength: Int =
+                            Global.tabs[tabIdx].tips.size                                  // 列表长度
+                        val pos: Int = Global.tabs[tabIdx].tips.indexOf(
+                            listAdapter!!.getAllChecked().first()
+                        )   // 当前位置
+                        view.fab_up.isEnabled = pos != 0
+                        view.fab_down.isEnabled = pos != allLength - 1
+                    } else {
+                        view.fab_up.visibility = View.GONE
+                        view.fab_down.visibility = View.GONE
+                    }
 
-                    menu?.findItem(R.id.menu_select_all)?.isVisible = isCheckMode
-                    supportActionBar?.setDisplayHomeAsUpEnabled(isCheckMode)
-                    title =
-                        if (isCheckMode)
-                            "已选择 ${items.size} / ${Global.tabs[tabIdx].tips.size} 项"
-                        else
-                            context?.getString(R.string.act_title)
+                    // 标题栏
+                    (activity as? MainActivity)?.run {
+
+                        menu?.findItem(R.id.menu_select_all)?.isVisible = isCheckMode
+                        supportActionBar?.setDisplayHomeAsUpEnabled(isCheckMode)
+                        title =
+                            if (isCheckMode)
+                                "已选择 ${items.size} / ${Global.tabs[tabIdx].tips.size} 项"
+                            else
+                                context?.getString(R.string.act_title)
+                    }
                 }
-            }}
+            }
         )
 
         view.list_tipItem.setItemViewCacheSize(0)
@@ -161,7 +176,8 @@ class TabFragment : Fragment(), IContextHelper {
         }
 
         // Action Listener
-        view.fab.setOnFloatingActionsMenuUpdateListener(object : FloatingActionsMenu.OnFloatingActionsMenuUpdateListener {
+        view.fab.setOnFloatingActionsMenuUpdateListener(object :
+            FloatingActionsMenu.OnFloatingActionsMenuUpdateListener {
 
             override fun onMenuCollapsed() {
                 view.view_fab_back.visibility = View.GONE
@@ -202,7 +218,8 @@ class TabFragment : Fragment(), IContextHelper {
                     // 列表长度
                     val allLength: Int = Global.tabs[tabIdx].tips.size
                     // 当前位置
-                    val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())
+                    val pos: Int =
+                        Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())
 
                     view.fab_up.isEnabled = pos != 0
                     view.fab_down.isEnabled = pos != allLength - 1
@@ -273,9 +290,25 @@ class TabFragment : Fragment(), IContextHelper {
 
         val commands =
             if (tipItems.size == 1)
-                arrayOf("复制", "编辑", "删除", if (isHighLight) "取消高亮" else "高亮", "分组间移动", "在浏览器打开", "关闭")
+                arrayOf(
+                    "复制",
+                    "编辑",
+                    "删除",
+                    if (isHighLight) "取消高亮" else "高亮",
+                    "分组间移动",
+                    "在浏览器打开",
+                    "关闭"
+                )
             else
-                arrayOf("复制", "查看", "删除", if (isHighLight) "取消高亮" else "高亮", "分组间移动", "在浏览器打开", "关闭")
+                arrayOf(
+                    "复制",
+                    "查看",
+                    "删除",
+                    if (isHighLight) "取消高亮" else "高亮",
+                    "分组间移动",
+                    "在浏览器打开",
+                    "关闭"
+                )
 
         val title =
             if (contents.size == 1)
@@ -286,23 +319,25 @@ class TabFragment : Fragment(), IContextHelper {
         activity?.showAlert(
             title = title,
             list = commands,
-            listener = DialogInterface.OnClickListener { dialog, idx -> run {
-                when (commands[idx]) {
-                    "复制"            -> copyTips(tipItems)
+            listener = DialogInterface.OnClickListener { dialog, idx ->
+                run {
+                    when (commands[idx]) {
+                        "复制" -> copyTips(tipItems)
 
-                    "编辑"            -> modifyTip(tipItems.first())
-                    "查看"            -> contentTips(tipItems)
-                    "删除"            -> deleteTips(tipItems)
-                    "高亮"            -> highLightTips(tipItems, true)
-                    "取消高亮"         -> highLightTips(tipItems, false)
-                    "分组间移动"       -> moveTipsInGroups(tipItems)
-                    "在浏览器打开"     -> openBrowserTips(tipItems)
-                    "关闭"            -> dialog.dismiss()
-                    else -> {
-                        activity?.showToast("${commands[idx]}: $title")
+                        "编辑" -> modifyTip(tipItems.first())
+                        "查看" -> contentTips(tipItems)
+                        "删除" -> deleteTips(tipItems)
+                        "高亮" -> highLightTips(tipItems, true)
+                        "取消高亮" -> highLightTips(tipItems, false)
+                        "分组间移动" -> moveTipsInGroups(tipItems)
+                        "在浏览器打开" -> openBrowserTips(tipItems)
+                        "关闭" -> dialog.dismiss()
+                        else -> {
+                            activity?.showToast("${commands[idx]}: $title")
+                        }
                     }
                 }
-            }}
+            }
         )
     }
 
@@ -323,22 +358,24 @@ class TabFragment : Fragment(), IContextHelper {
             hint = "新记录内容",
             negText = "取消",
             posText = "添加",
-            posClick = { _, _ , newText -> run {
+            posClick = { _, _, newText ->
+                run {
 
-                val trimNewText = newText.trim()
+                    val trimNewText = newText.trim()
 
-                // 非空
-                if (trimNewText.isNotEmpty()) {
-                    val tipItem = TipItem(trimNewText)
-                    if (Global.tabs[tabIdx].tips.add(tipItem)) {
-                        refreshAfterUpdate()
-                        view?.list_tipItem?.scrollToPosition(Global.tabs[tabIdx].tips.size - 1)
-                        activity?.showToast("已创建 \"${tipItem.content}\"")
-                    } else {
-                        activity?.showToast("创建失败 \"${tipItem.content}\"")
+                    // 非空
+                    if (trimNewText.isNotEmpty()) {
+                        val tipItem = TipItem(trimNewText)
+                        if (Global.tabs[tabIdx].tips.add(tipItem)) {
+                            refreshAfterUpdate()
+                            view?.list_tipItem?.scrollToPosition(Global.tabs[tabIdx].tips.size - 1)
+                            activity?.showToast("已创建 \"${tipItem.content}\"")
+                        } else {
+                            activity?.showToast("创建失败 \"${tipItem.content}\"")
+                        }
                     }
                 }
-            }}
+            }
         )
     }
 
@@ -372,27 +409,29 @@ class TabFragment : Fragment(), IContextHelper {
             text = tipItem.content,
             negText = "取消",
             posText = "修改",
-            posClick = { _, _ , newText -> run {
+            posClick = { _, _, newText ->
+                run {
 
-                val trimNewText = newText.trim()
+                    val trimNewText = newText.trim()
 
-                // 非空，变化
-                if (trimNewText.isNotEmpty() && preContent != trimNewText) {
-                    tipItem.content = trimNewText
-                    refreshAfterUpdate()
+                    // 非空，变化
+                    if (trimNewText.isNotEmpty() && preContent != trimNewText) {
+                        tipItem.content = trimNewText
+                        refreshAfterUpdate()
 
-                    activity?.showSnackBar(
-                        message = "已修改 \"$preContent\"",
-                        view = view!!,
-                        action = "撤销",
-                        listener = View.OnClickListener {
-                            tipItem.content = preContent
-                            refreshAfterUpdate()
-                            activity?.showSnackBar(message = "已撤销修改", view = view!!)
-                        }
-                    )
+                        activity?.showSnackBar(
+                            message = "已修改 \"$preContent\"",
+                            view = view!!,
+                            action = "撤销",
+                            listener = View.OnClickListener {
+                                tipItem.content = preContent
+                                refreshAfterUpdate()
+                                activity?.showSnackBar(message = "已撤销修改", view = view!!)
+                            }
+                        )
+                    }
                 }
-            }}
+            }
         )
     }
 
@@ -441,29 +480,31 @@ class TabFragment : Fragment(), IContextHelper {
             message = message,
             negText = "取消",
             posText = "删除",
-            posListener = DialogInterface.OnClickListener { _, _ -> run {
-                tipItems.forEach { Global.tabs[tabIdx].tips.remove(it) }
-                refreshAfterUpdate()
-                listAdapter?.checkMode = false
+            posListener = DialogInterface.OnClickListener { _, _ ->
+                run {
+                    tipItems.forEach { Global.tabs[tabIdx].tips.remove(it) }
+                    refreshAfterUpdate()
+                    listAdapter?.checkMode = false
 
-                activity?.showSnackBar(
-                    message = message2,
-                    view = view!!,
-                    action = "撤销",
-                    listener = View.OnClickListener {
-                        for (idx in 0 until tipItems.size) {
-                            try {
-                                Global.tabs[tabIdx].tips.add(tipIndies[idx], tipItems[idx])
-                            } catch (ex: Exception) {
-                                ex.printStackTrace()
-                                Global.tabs[tabIdx].tips.add(tipItems[idx])
+                    activity?.showSnackBar(
+                        message = message2,
+                        view = view!!,
+                        action = "撤销",
+                        listener = View.OnClickListener {
+                            for (idx in tipItems.indices) {
+                                try {
+                                    Global.tabs[tabIdx].tips.add(tipIndies[idx], tipItems[idx])
+                                } catch (ex: Exception) {
+                                    ex.printStackTrace()
+                                    Global.tabs[tabIdx].tips.add(tipItems[idx])
+                                }
                             }
+                            refreshAfterUpdate()
+                            activity?.showSnackBar(message = "已撤销删除", view = view!!)
                         }
-                        refreshAfterUpdate()
-                        activity?.showSnackBar(message = "已撤销删除", view = view!!)
-                    }
-                )
-            }}
+                    )
+                }
+            }
         )
     }
 
@@ -482,7 +523,7 @@ class TabFragment : Fragment(), IContextHelper {
         refreshAfterUpdate()
         val message =
             if (isHighLight) "已高亮 " else "已取消高亮 " +
-            if (tipItems.size == 1) "\"${contents.first()}\"" else "${tipItems.size} 条记录"
+                    if (tipItems.size == 1) "\"${contents.first()}\"" else "${tipItems.size} 条记录"
 
         activity?.showSnackBar(
             message = message,
@@ -516,56 +557,60 @@ class TabFragment : Fragment(), IContextHelper {
         activity?.showAlert(
             title = "移动${if (tipItems.size == 1) " \"${tipItems.first().content}\" " else " ${tipItems.size} 项"}至...",
             list = tabTitles.minus(Global.tabs[tabIdx].title).toTypedArray(),
-            listener = DialogInterface.OnClickListener { _, idx -> run {
-                val fromIdx = tabIdx
-                val toIdx = tabTitles.indexOf(tabTitles.minus(Global.tabs[tabIdx].title)[idx])
+            listener = DialogInterface.OnClickListener { _, idx ->
+                run {
+                    val fromIdx = tabIdx
+                    val toIdx = tabTitles.indexOf(tabTitles.minus(Global.tabs[tabIdx].title)[idx])
 
-                for (tipItem in tipItems) {
-                    Global.tabs[fromIdx].tips.remove(tipItem)
-                    Global.tabs[toIdx].tips.add(tipItem)
-                }
-                listAdapter?.checkMode = false
+                    for (tipItem in tipItems) {
+                        Global.tabs[fromIdx].tips.remove(tipItem)
+                        Global.tabs[toIdx].tips.add(tipItem)
+                    }
+                    listAdapter?.checkMode = false
 
-                // refreshAfterUpdate()
-                (activity as? MainActivity)?.let {
-                    it.view_pager.adapter?.notifyDataSetChanged()
-                    it.view_pager.currentItem = toIdx
+                    // refreshAfterUpdate()
+                    (activity as? MainActivity)?.let {
+                        it.view_pager.adapter?.notifyDataSetChanged()
+                        it.view_pager.currentItem = toIdx
 
-                    it.fragments[toIdx].refreshAfterUpdate()
-                    it.fragments[toIdx].list_tipItem?.scrollToPosition(Global.tabs[toIdx].tips.size - 1)
-                    it.fragments[fromIdx].refreshAfterUpdate()
+                        it.fragments[toIdx].refreshAfterUpdate()
+                        it.fragments[toIdx].list_tipItem?.scrollToPosition(Global.tabs[toIdx].tips.size - 1)
+                        it.fragments[fromIdx].refreshAfterUpdate()
 
-                    val message = "已移动 " +
-                        if (tipItems.size == 1) "\"${tipItems.first().content}\""
-                        else "${tipItems.size} 项"
+                        val message = "已移动 " +
+                                if (tipItems.size == 1) "\"${tipItems.first().content}\""
+                                else "${tipItems.size} 项"
 
-                    activity?.showSnackBar(
-                        message = message,
-                        view = it.fragments[toIdx].view!!,
-                        action = "撤销",
-                        listener = View.OnClickListener { _ -> run {
+                        activity?.showSnackBar(
+                            message = message,
+                            view = it.fragments[toIdx].view!!,
+                            action = "撤销",
+                            listener = View.OnClickListener { _ ->
+                                run {
 
-                            for (i in 0 until tipItems.size) {
-                                Global.tabs[toIdx].tips.remove(tipItems[i])
-                                try {
-                                    Global.tabs[fromIdx].tips.add(indexes[i], tipItems[i])
-                                } catch (ex: Exception) {
-                                    ex.printStackTrace()
-                                    Global.tabs[fromIdx].tips.add(tipItems[i])
+                                    for (i in tipItems.indices) {
+                                        Global.tabs[toIdx].tips.remove(tipItems[i])
+                                        try {
+                                            Global.tabs[fromIdx].tips.add(indexes[i], tipItems[i])
+                                        } catch (ex: Exception) {
+                                            ex.printStackTrace()
+                                            Global.tabs[fromIdx].tips.add(tipItems[i])
+                                        }
+                                    }
+
+                                    it.view_pager.adapter?.notifyDataSetChanged()
+                                    it.view_pager.currentItem = fromIdx
+
+                                    it.fragments[fromIdx].refreshAfterUpdate()
+                                    it.fragments[toIdx].refreshAfterUpdate()
+
+                                    activity?.showSnackBar(message = "已撤销移动", view = view!!)
                                 }
                             }
-
-                            it.view_pager.adapter?.notifyDataSetChanged()
-                            it.view_pager.currentItem = fromIdx
-
-                            it.fragments[fromIdx].refreshAfterUpdate()
-                            it.fragments[toIdx].refreshAfterUpdate()
-
-                            activity?.showSnackBar(message = "已撤销移动", view = view!!)
-                        }}
-                    )
+                        )
+                    }
                 }
-            }}
+            }
         )
     }
 
@@ -580,8 +625,8 @@ class TabFragment : Fragment(), IContextHelper {
             if (isMoveUp && currIdx == 0) return
             if (!isMoveUp && currIdx == len - 1) return
 
-            if (isMoveUp)   Global.tabs[tabIdx].tips.swap(currIdx, currIdx - 1)
-            else            Global.tabs[tabIdx].tips.swap(currIdx, currIdx + 1)
+            if (isMoveUp) Global.tabs[tabIdx].tips.swap(currIdx, currIdx - 1)
+            else Global.tabs[tabIdx].tips.swap(currIdx, currIdx + 1)
 
             refreshAfterUpdate()
 
@@ -589,8 +634,8 @@ class TabFragment : Fragment(), IContextHelper {
             val allSize: Int = Global.tabs[tabIdx].tips.size
             val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())
 
-            view?.fab_up?.isEnabled     = pos != 0
-            view?.fab_down?.isEnabled   = pos != allSize - 1
+            view?.fab_up?.isEnabled = pos != 0
+            view?.fab_down?.isEnabled = pos != allSize - 1
         }
     }
 
@@ -634,9 +679,11 @@ class TabFragment : Fragment(), IContextHelper {
                 title = "用浏览器打开",
                 message = "是否打开以下 ${links.size} 个链接：\n\n" + links.joinToString("\n\n"),
                 posText = "打开",
-                posListener = DialogInterface.OnClickListener { _, _ -> run {
-                    activity?.showBrowser(links)
-                }},
+                posListener = DialogInterface.OnClickListener { _, _ ->
+                    run {
+                        activity?.showBrowser(links)
+                    }
+                },
                 negText = "取消"
             )
         }

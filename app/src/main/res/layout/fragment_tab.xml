@@ -3,23 +3,23 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:fab="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginStart="@dimen/content_horizontal_margin"
-    android:layout_marginEnd="@dimen/content_horizontal_margin"
     android:layout_marginTop="@dimen/content_vertical_margin"
-    android:layout_marginBottom="@dimen/content_vertical_margin">
+    android:layout_marginEnd="@dimen/content_horizontal_margin"
+    android:layout_marginBottom="@dimen/content_vertical_margin"
+    android:orientation="vertical">
 
     <include
-        layout="@layout/view_empty"
         android:id="@+id/view_empty"
-        android:visibility="gone"/>
+        layout="@layout/view_empty"
+        android:visibility="gone" />
 
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/srl"
-        android:layout_height="match_parent"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:divider="@null"
         android:visibility="visible">
 
@@ -53,8 +53,8 @@
         fab:fab_addButtonColorPressed="@color/colorAccentDark"
         fab:fab_addButtonPlusIconColor="@color/white"
 
-        fab:fab_labelStyle="@style/fab_menu_labels_style"
         fab:fab_expandDirection="up"
+        fab:fab_labelStyle="@style/fab_menu_labels_style"
         fab:fab_labelsPosition="left">
 
         <!-- Show If Not Check -->
@@ -75,9 +75,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_arrow_upward_white_24dp"
+            app:fab_size="mini"
             fab:fab_colorNormal="@color/colorAccentLight"
             fab:fab_colorPressed="@color/colorAccent"
-            app:fab_size="mini"
             fab:fab_title="上移" />
 
         <com.getbase.floatingactionbutton.FloatingActionButton
@@ -85,9 +85,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_arrow_downward_white_24dp"
+            app:fab_size="mini"
             fab:fab_colorNormal="@color/colorAccentLight"
             fab:fab_colorPressed="@color/colorAccent"
-            app:fab_size="mini"
             fab:fab_title="下移" />
 
         <com.getbase.floatingactionbutton.FloatingActionButton
@@ -95,9 +95,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_more_h_white_24dp"
+            app:fab_size="mini"
             fab:fab_colorNormal="@color/colorAccentLight"
             fab:fab_colorPressed="@color/colorAccent"
-            app:fab_size="mini"
             fab:fab_title="更多选项" />
 
         <com.getbase.floatingactionbutton.FloatingActionButton
@@ -105,9 +105,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_icon="@drawable/ic_clear_all_white_24dp"
+            app:fab_size="mini"
             fab:fab_colorNormal="@color/colorAccentLight"
             fab:fab_colorPressed="@color/colorAccent"
-            app:fab_size="mini"
             fab:fab_title="退出多选" />
 
     </com.getbase.floatingactionbutton.FloatingActionsMenu>

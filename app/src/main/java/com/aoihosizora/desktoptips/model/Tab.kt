@@ -3,16 +3,13 @@ package com.aoihosizora.desktoptips.model
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import java.lang.Exception
 
-data class Tab (
-
+data class Tab(
     @JsonProperty(value = "Title", index = 1)
     var title: String,
 
     @JsonProperty(value = "Tips", index = 2)
     var tips: MutableList<TipItem> = mutableListOf()
-
 ) {
     companion object {
 

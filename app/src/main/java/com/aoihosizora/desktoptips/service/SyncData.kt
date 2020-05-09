@@ -1,14 +1,15 @@
 package com.aoihosizora.desktoptips.service
 
 import android.support.annotation.WorkerThread
-import android.util.Log
 import com.aoihosizora.desktoptips.model.Global
 import com.aoihosizora.desktoptips.model.Tab
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
-import java.lang.Exception
-import java.net.*
+import java.net.Inet4Address
+import java.net.NetworkInterface
+import java.net.ServerSocket
+import java.net.Socket
 import java.util.*
 
 class SyncData {

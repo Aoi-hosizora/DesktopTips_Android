@@ -64,7 +64,8 @@ class TipItemAdapter(
      * 初始化 VIEW 和 点击事件
      */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.view_tips_adapter, parent, false)
+        val view =
+            LayoutInflater.from(parent.context).inflate(R.layout.view_tips_adapter, parent, false)
 
         view.setOnClickListener(this)
         view.setOnLongClickListener(this)
@@ -92,15 +93,17 @@ class TipItemAdapter(
         holder.view.check_box.setOnCheckedChangeListener(null)
         holder.view.check_box.isChecked = checkItems.indexOf(tipItem) != -1
         holder.view.check_box.visibility = if (checkMode) View.VISIBLE else View.GONE
-        holder.view.check_box.setOnCheckedChangeListener { _ , checked -> run {
-            if (checked)
-                checkItems.add(tipItem)
-            else
-                checkItems.remove(tipItem)
+        holder.view.check_box.setOnCheckedChangeListener { _, checked ->
+            run {
+                if (checked)
+                    checkItems.add(tipItem)
+                else
+                    checkItems.remove(tipItem)
 
-            // 通知选中内容变更
-            onCheckedChanged(checkMode, checkItems)
-        }}
+                // 通知选中内容变更
+                onCheckedChanged(checkMode, checkItems)
+            }
+        }
     }
 
     override fun getItemCount(): Int = tipItems.size

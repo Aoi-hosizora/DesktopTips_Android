@@ -9,9 +9,7 @@ object Global {
     // private const val TAG = "Global"
     private const val FILE_NAME = "data.json"
 
-    var tabs: MutableList<Tab> = mutableListOf(
-        Tab("默认")
-    )
+    var tabs: MutableList<Tab> = mutableListOf(Tab("默认"))
 
     @WorkerThread
     fun loadData(context: Context): Boolean {
