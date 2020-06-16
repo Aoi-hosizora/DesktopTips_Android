@@ -1,12 +1,10 @@
-@file:Suppress("DEPRECATION")
+@file:Suppress("unused", "DEPRECATION")
 
 package com.aoihosizora.desktoptips.ui
 
 import android.app.AlertDialog
 import android.app.ProgressDialog
-import android.content.Context
-import android.content.DialogInterface
-import android.content.Intent
+import android.content.*
 import android.net.Uri
 import android.support.design.widget.Snackbar
 import android.view.View
@@ -18,30 +16,13 @@ import android.widget.Toast
  */
 interface IContextHelper {
 
-    /**
-     * LENGTH_SHORT Toast
-     */
     fun Context.showToast(message: CharSequence) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    /**
-     * Title + Message + OkPos
-     */
-    fun Context.showAlert(title: CharSequence, message: CharSequence) {
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("确定", null)
-            .show()
-    }
-
-    /**
-     * Title + Message + PosText + PosClick
-     */
     fun Context.showAlert(
         title: CharSequence, message: CharSequence,
-        posText: CharSequence, posListener: DialogInterface.OnClickListener? = null
+        posText: CharSequence = "OK", posListener: ((DialogInterface, Int) -> Unit)? = null
     ) {
         AlertDialog.Builder(this)
             .setTitle(title)
@@ -50,13 +31,10 @@ interface IContextHelper {
             .show()
     }
 
-    /**
-     * Title + Message + PosText + PosClick + NegTest + NegClick
-     */
     fun Context.showAlert(
         title: CharSequence, message: CharSequence,
-        posText: CharSequence, posListener: DialogInterface.OnClickListener? = null,
-        negText: CharSequence, negListener: DialogInterface.OnClickListener? = null
+        posText: CharSequence, posListener: ((DialogInterface, Int) -> Unit)? = null,
+        negText: CharSequence, negListener: ((DialogInterface, Int) -> Unit)? = null
     ) {
         AlertDialog.Builder(this)
             .setTitle(title)
@@ -66,13 +44,25 @@ interface IContextHelper {
             .show()
     }
 
-    /**
-     * Title + View + PosText + PosClick + NegTest + NegClick
-     */
+    fun Context.showAlert(
+        title: CharSequence, message: CharSequence,
+        posText: CharSequence, posListener: ((DialogInterface, Int) -> Unit)? = null,
+        negText: CharSequence, negListener: ((DialogInterface, Int) -> Unit)? = null,
+        netText: CharSequence, netListener: ((DialogInterface, Int) -> Unit)? = null
+    ) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(posText, posListener)
+            .setNegativeButton(negText, negListener)
+            .setNeutralButton(netText, netListener)
+            .show()
+    }
+
     fun Context.showAlert(
         title: CharSequence, view: View,
-        posText: CharSequence, posListener: DialogInterface.OnClickListener? = null,
-        negText: CharSequence, negListener: DialogInterface.OnClickListener? = null
+        posText: CharSequence, posListener: ((DialogInterface, Int) -> Unit)? = null,
+        negText: CharSequence, negListener: ((DialogInterface, Int) -> Unit)? = null
     ) {
         AlertDialog.Builder(this)
             .setTitle(title)
@@ -82,44 +72,10 @@ interface IContextHelper {
             .show()
     }
 
-    /**
-     * Title + Text + Hint + MaxLines + PosText + PosClick + NegText + NegClick
-     */
-    fun Context.showInputDlg(
-        title: CharSequence,
-        text: CharSequence = "", hint: CharSequence = "", maxLines: Int = 5,
-        posText: CharSequence, posClick: (DialogInterface, Int, String) -> Unit,
-        negText: CharSequence, negListener: DialogInterface.OnClickListener? = null
-    ) {
-
-        val edt = EditText(this)
-        edt.setSingleLine(true)
-        edt.maxLines = maxLines
-        edt.setHorizontallyScrolling(false)
-
-        edt.hint = hint
-        edt.setText(text)
-
-        showAlert(
-            title = title,
-            view = edt,
-            posText = posText,
-            posListener = DialogInterface.OnClickListener { dialogInterface, i ->
-                run {
-                    posClick(dialogInterface, i, edt.text.toString())
-                }
-            },
-            negText = negText,
-            negListener = negListener
-        )
-    }
-
-    /**
-     * Title + Message + List + Listener
-     */
     fun Context.showAlert(
         title: CharSequence,
-        list: Array<out CharSequence>, listener: DialogInterface.OnClickListener? = null
+        list: Array<out CharSequence>,
+        listener: ((DialogInterface, Int) -> Unit)? = null
     ) {
         AlertDialog.Builder(this)
             .setTitle(title)
@@ -127,12 +83,29 @@ interface IContextHelper {
             .show()
     }
 
-    /**
-     * Context + Message + Flag + Listener -> ProgressDialog
-     */
+    fun Context.showInputDlg(
+        title: CharSequence, text: CharSequence = "", hint: CharSequence = "", maxLines: Int = 5,
+        posText: CharSequence, posClick: (DialogInterface, Int, String) -> Unit,
+        negText: CharSequence, negListener: ((DialogInterface, Int) -> Unit)? = null
+    ) {
+        val edt = EditText(this)
+        edt.hint = hint
+        edt.setText(text)
+        edt.setSingleLine(true)
+        edt.maxLines = maxLines
+        edt.setHorizontallyScrolling(false)
+
+        showAlert(
+            title = title, view = edt,
+            posText = posText,
+            posListener = { dialogInterface, i -> posClick(dialogInterface, i, edt.text.toString()) },
+            negText = negText, negListener = negListener
+        )
+    }
+
     fun Context.showProgress(
         context: Context, message: CharSequence,
-        cancelable: Boolean = true, onCancelListener: DialogInterface.OnCancelListener? = null
+        cancelable: Boolean, onCancelListener: ((DialogInterface) -> Unit)? = null
     ): ProgressDialog {
         val progressDlg = ProgressDialog(context)
         progressDlg.setMessage(message)
@@ -142,39 +115,26 @@ interface IContextHelper {
         return progressDlg
     }
 
-    /**
-     * Message + View
-     */
     fun Context.showSnackBar(message: CharSequence, view: View) {
         Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show()
     }
 
-    /**
-     * Message + View + Action + Listener
-     */
     fun Context.showSnackBar(
         message: CharSequence, view: View,
-        action: CharSequence, listener: View.OnClickListener? = null
+        action: CharSequence, listener: ((View) -> Unit)? = null
     ) {
-        Snackbar
-            .make(view, message, Snackbar.LENGTH_SHORT)
-            .setAction(action, listener)
-            .show()
+        Snackbar.make(view, message, Snackbar.LENGTH_SHORT).setAction(action, listener).show()
     }
 
-    /**
-     * Links
-     */
-    fun Context.showBrowser(links: Collection<String>) {
-        for (link in links) {
-            try {
-                val uri = Uri.parse(link)
-                val intent = Intent(Intent.ACTION_VIEW, uri)
-                startActivity(intent)
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                continue
-            }
-        }
+    fun Context.copyText(text: CharSequence) {
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipData = ClipData.newPlainText("Label", text)
+        cm.primaryClip = clipData
+    }
+
+    fun Context.openBrowser(url: String) {
+        val uri = Uri.parse(url)
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        startActivity(intent)
     }
 }

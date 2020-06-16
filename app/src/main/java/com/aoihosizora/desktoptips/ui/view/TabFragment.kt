@@ -1,4 +1,4 @@
-package com.aoihosizora.desktoptips.ui
+package com.aoihosizora.desktoptips.ui.view
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -13,8 +13,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.aoihosizora.desktoptips.R
-import com.aoihosizora.desktoptips.model.Global
+import com.aoihosizora.desktoptips.global.Global
 import com.aoihosizora.desktoptips.model.TipItem
+import com.aoihosizora.desktoptips.ui.IContextHelper
 import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import com.aoihosizora.desktoptips.util.swap
 import com.getbase.floatingactionbutton.FloatingActionsMenu

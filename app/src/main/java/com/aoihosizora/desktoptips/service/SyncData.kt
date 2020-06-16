@@ -1,7 +1,7 @@
 package com.aoihosizora.desktoptips.service
 
 import android.support.annotation.WorkerThread
-import com.aoihosizora.desktoptips.model.Global
+import com.aoihosizora.desktoptips.global.Global
 import com.aoihosizora.desktoptips.model.Tab
 import java.io.BufferedReader
 import java.io.InputStreamReader

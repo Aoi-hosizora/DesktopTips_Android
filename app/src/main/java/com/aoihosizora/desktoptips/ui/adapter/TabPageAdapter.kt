@@ -4,8 +4,8 @@ import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
-import com.aoihosizora.desktoptips.model.Global
-import com.aoihosizora.desktoptips.ui.TabFragment
+import com.aoihosizora.desktoptips.global.Global
+import com.aoihosizora.desktoptips.ui.view.TabFragment
 
 class TabPageAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
 
