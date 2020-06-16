@@ -1,10 +1,6 @@
 package com.aoihosizora.desktoptips.ui.view
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.os.Bundle
-import android.os.Handler
 import android.support.v4.app.Fragment
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
@@ -18,7 +14,6 @@ import com.aoihosizora.desktoptips.ui.IContextHelper
 import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import com.aoihosizora.desktoptips.ui.contract.TabFragmentContract
 import com.aoihosizora.desktoptips.ui.presenter.TabFragmentPresenter
-import com.aoihosizora.desktoptips.util.swap
 import com.getbase.floatingactionbutton.FloatingActionsMenu
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_tab.*
@@ -29,36 +24,123 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
     override val presenter = TabFragmentPresenter(this)
 
     companion object {
-        /**
-         * Bundle Arg
-         */
-        const val BDL_TAB_IDX = "BDL_TAB_IDX"
+        const val BUNDLE_TAB_IDX = "BUNDLE_TAB_IDX"
     }
 
-    // Fun: onCreateView onKeyBack initUI initFab refreshAfterUpdate onItemsClick
-    // Var: listAdapter tabIdx
-    // region 界面更新与交互
-
-    private val listAdapter: TipItemAdapter?
-        get() = view?.list_tipItem?.adapter as? TipItemAdapter
-
-    private val tabIdx: Int by lazy {
-        arguments!!.getInt(BDL_TAB_IDX, -1)
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_tab, container, false)
-        initUI(view)
+
+        initView(view)
+        initListener(view)
+        onRefreshList()
+
         return view
     }
 
+    private fun initView(view: View) {
+        // srl
+        view.srl.setColorSchemeResources(R.color.colorAccent)
+        view.srl.setOnRefreshListener {
+            onRefreshList()
+            view.srl.isRefreshing = false
+        }
+
+        // fab
+        view.view_fab_back.setOnClickListener { view.fab.collapse() }
+        view.fab.collapse()
+        view.fab.setOnFloatingActionsMenuUpdateListener(object : FloatingActionsMenu.OnFloatingActionsMenuUpdateListener {
+            override fun onMenuCollapsed() {
+                view.view_fab_back.visibility = View.GONE
+            }
+
+            override fun onMenuExpanded() {
+                if (!listAdapter!!.checkMode) {
+                    // 多选模式不屏蔽蒙版
+                    view.view_fab_back.visibility = View.VISIBLE
+                }
+                onFabMenuExpanded()
+            }
+        })
+
+        // list
+        view.list_view.setEmptyView(view.view_empty)
+        view.list_view.layoutManager = LinearLayoutManager(activity)
+        view.list_view.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+        view.list_view.setItemViewCacheSize(0)
+        view.list_view.adapter = TipItemAdapter(
+            context = context!!,
+            tipItems = Global.tabs[tabIdx].tips,
+            onItemClick = { _, tipItem -> onItemsClick(listOf(tipItem)) },
+            onItemLongClick = { _, tipItem -> onItemLongClick(tipItem) },
+            onCheckedChanged = { isCheckMode, items -> onCheckedChanged(isCheckMode, items) }
+        )
+    }
+
+    private fun initListener(view: View) {
+        // 新建
+        view.fab_add.setOnClickListener {
+            view.fab.collapse()
+            newTips()
+        }
+        // 退出多选
+        view.fab_exit_check.setOnClickListener {
+            view.fab.collapse()
+            listAdapter?.checkMode = false
+        }
+        // 上移
+        view.fab_up.setOnClickListener {
+            moveUpDownTip(listAdapter?.getAllChecked()?.first(), isMoveUp = true)
+        }
+        // 下移
+        view.fab_down.setOnClickListener {
+            moveUpDownTip(listAdapter?.getAllChecked()?.first(), isMoveUp = false)
+        }
+        // 更多
+        view.fab_more.setOnClickListener {
+            view.fab.collapse()
+            listAdapter?.let {
+                onItemsClick(it.getAllChecked().toList())
+            }
+        }
+    }
+
+    private fun onFabMenuExpanded() {
+        if (listAdapter == null) {
+            return
+        }
+
+        val selLength: Int = listAdapter!!.getAllChecked().size
+        val isCheck = listAdapter!!.checkMode         // 选中模式
+        val isCheckSingle = isCheck && selLength == 1 // 选中单项
+        fun isShow(flag: Boolean): Int = if (flag) View.VISIBLE else View.GONE
+
+        view?.run {
+            fab_add.visibility = isShow(!isCheck)       // 非选中
+            fab_exit_check.visibility = isShow(isCheck) // 选中
+            fab_more.visibility = isShow(isCheck)       // 选中
+            fab_up.visibility = isShow(isCheckSingle)   // 选中，单选
+            fab_down.visibility = isShow(isCheckSingle) // 选中，单选
+
+            // 位置相关 (单选)
+            if (isCheckSingle) {
+                val allLength: Int = Global.tabs[tabIdx].tips.size
+                val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())
+
+                fab_up.isEnabled = pos != 0
+                fab_down.isEnabled = pos != allLength - 1
+            }
+        }
+    }
+
+    private val listAdapter: TipItemAdapter?
+        get() = view?.list_view?.adapter as? TipItemAdapter
+
+    override val tabIdx: Int by lazy {
+        arguments!!.getInt(BUNDLE_TAB_IDX, -1)
+    }
+
     /**
-     * 返回键，受 MainAct 委托
-     * @return 是否操作
+     * 返回键，MainAct 委托
      */
     fun onKeyBack(): Boolean {
         view?.run {
@@ -69,8 +151,9 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
             }
 
             // 2. Fab 非蒙版展开
-            if (fab.isExpanded && view_fab_back.visibility == View.GONE)
+            if (fab.isExpanded && view_fab_back.visibility == View.GONE) {
                 fab.collapse()
+            }
 
             // 3. List 多选
             listAdapter?.let {
@@ -83,273 +166,94 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
         return false
     }
 
-    /**
-     * 初始化碎片参数 Fab 和 适配器
-     */
-    private fun initUI(view: View) {
-
-        // Data
-        refreshAfterUpdate(isSaveData = false)
-
-        // Srl
-        view.srl.setColorSchemeResources(R.color.colorAccent)
-        view.srl.setOnRefreshListener {
-            Handler().postDelayed({
-                refreshAfterUpdate(isSaveData = false)
-                view.srl.isRefreshing = false
-            }, 150)
-        }
-
-        // Fab
-        initFab(view)
-
-        // List
-        view.list_tipItem.setEmptyView(view.view_empty)
-        view.list_tipItem.layoutManager = LinearLayoutManager(activity)
-        view.list_tipItem.addItemDecoration(
-            DividerItemDecoration(
-                context,
-                DividerItemDecoration.VERTICAL
-            )
-        )
-
-        val listAdapter = TipItemAdapter(
-            context = context!!,
-            tipItems = Global.tabs[tabIdx].tips,
-
-            onItemClick = { _, tipItem -> onItemsClick(listOf(tipItem)) },
-            onItemLongClick = { _, tipItem ->
-                run {
-                    listAdapter?.checkMode = true
-                    listAdapter?.setItemChecked(tipItem, true)
-                    view.fab.expand()
-                }
-            },
-            onCheckedChanged = { isCheckMode, items ->
-                run {
-                    // 多选可用性
-
-                    // 选中单项
-                    val isCheckSingle =
-                        listAdapter != null && listAdapter!!.checkMode && listAdapter!!.getAllChecked().size == 1
-                    if (isCheckSingle) {
-                        view.fab_up.visibility = View.VISIBLE
-                        view.fab_down.visibility = View.VISIBLE
-                        // 位置
-                        val allLength: Int =
-                            Global.tabs[tabIdx].tips.size                                  // 列表长度
-                        val pos: Int = Global.tabs[tabIdx].tips.indexOf(
-                            listAdapter!!.getAllChecked().first()
-                        )   // 当前位置
-                        view.fab_up.isEnabled = pos != 0
-                        view.fab_down.isEnabled = pos != allLength - 1
-                    } else {
-                        view.fab_up.visibility = View.GONE
-                        view.fab_down.visibility = View.GONE
-                    }
-
-                    // 标题栏
-                    (activity as? MainActivity)?.run {
-
-                        menu?.findItem(R.id.menu_select_all)?.isVisible = isCheckMode
-                        supportActionBar?.setDisplayHomeAsUpEnabled(isCheckMode)
-                        title =
-                            if (isCheckMode)
-                                "已选择 ${items.size} / ${Global.tabs[tabIdx].tips.size} 项"
-                            else
-                                context.getString(R.string.act_title)
-                    }
-                }
-            }
-        )
-
-        view.list_tipItem.setItemViewCacheSize(0)
-        view.list_tipItem.adapter = listAdapter
+    private fun onRefreshList() {
+        listAdapter?.tipItems = Global.tabs[tabIdx].tips
+        listAdapter?.notifyDataSetChanged()
+        list_view.notifyDataSetChanged()
     }
 
-    /**
-     * 初始化 Fab UI / Action
-     */
-    private fun initFab(view: View) {
+    private fun onItemLongClick(tipItem: TipItem) {
+        listAdapter?.checkMode = true
+        listAdapter?.setItemChecked(tipItem, true)
+        view?.fab?.expand()
+    }
 
-        view.fab.collapse()
-
-        // Menu
-        view.view_fab_back.setOnClickListener {
-            view.fab.collapse()
-        }
-
-        // Action Listener
-        view.fab.setOnFloatingActionsMenuUpdateListener(object :
-            FloatingActionsMenu.OnFloatingActionsMenuUpdateListener {
-
-            override fun onMenuCollapsed() {
-                view.view_fab_back.visibility = View.GONE
+    private fun onCheckedChanged(isCheckMode: Boolean, items: List<TipItem>) {
+        val tips = Global.tabs[tabIdx].tips
+        listAdapter?.let {
+            // 选中单项
+            if (it.checkMode && it.getAllChecked().size == 1) {
+                val allLength = tips.size // 列表长度
+                val currPos = tips.indexOf(listAdapter!!.getAllChecked().first()) // 当前位置
+                view?.fab_up?.isEnabled = currPos != 0
+                view?.fab_down?.isEnabled = currPos != allLength - 1
+            } else {
+                view?.fab_up?.visibility = View.GONE
+                view?.fab_down?.visibility = View.GONE
             }
 
-            override fun onMenuExpanded() {
-                // 多选模式不屏蔽蒙版
-                if (!listAdapter!!.checkMode)
-                    view.view_fab_back.visibility = View.VISIBLE
-
-                // 初始化菜单
-                if (listAdapter == null) return
-
-                // 显示相关
-                /////////////////////////////////////////
-
-                // 选中长度
-                val selLength: Int = listAdapter!!.getAllChecked().size
-
-                fun isShow(flag: Boolean): Int {
-                    return if (flag) View.VISIBLE else View.GONE
-                }
-
-                val isCheck = listAdapter!!.checkMode               // 选中模式
-                val isCheckSingle = isCheck && selLength == 1       // 选中单项
-                // val isCheckZero = isCheck && selLength == 0      // 选中零项
-                // val isCheckMulti = isCheck && selLength > 1      // 选中多项
-
-                view.fab_add.visibility = isShow(!isCheck)          // 非选中
-                view.fab_exit_check.visibility = isShow(isCheck)    // 选中
-                view.fab_more.visibility = isShow(isCheck)          // 选中
-                view.fab_up.visibility = isShow(isCheckSingle)      // 选中，单选
-                view.fab_down.visibility = isShow(isCheckSingle)    // 选中，单选
-
-                // 位置相关 (单选)
-
-                if (isCheckSingle) {
-                    // 列表长度
-                    val allLength: Int = Global.tabs[tabIdx].tips.size
-                    // 当前位置
-                    val pos: Int =
-                        Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())
-
-                    view.fab_up.isEnabled = pos != 0
-                    view.fab_down.isEnabled = pos != allLength - 1
-                }
+            // 标题栏
+            (activity as? MainActivity)?.run {
+                menu?.findItem(R.id.menu_select_all)?.isVisible = isCheckMode
+                supportActionBar?.setDisplayHomeAsUpEnabled(isCheckMode)
+                title = if (isCheckMode)
+                    "已选择 ${items.size} / ${Global.tabs[tabIdx].tips.size} 项"
+                else
+                    context.getString(R.string.act_title)
             }
-        })
-
-        // Button
-        view.fab_add.setOnClickListener { // 新建
-            newTips()
-            view.fab.collapse()
-        }
-
-        view.fab_exit_check.setOnClickListener { // 退出多选
-            view.fab.collapse()
-            listAdapter?.checkMode = false
-        }
-
-        view.fab_up.setOnClickListener { // 上移
-            moveUpDownTip(listAdapter?.getAllChecked()?.first(), isMoveUp = true)
-        }
-
-        view.fab_down.setOnClickListener { // 下移
-            moveUpDownTip(listAdapter?.getAllChecked()?.first(), isMoveUp = false)
-        }
-
-        view.fab_more.setOnClickListener {  // 更多
-            listAdapter?.let {
-                onItemsClick(it.getAllChecked().toList())
-            }
-            view.fab.collapse()
         }
     }
 
-    /**
-     * 修改完数据后更新 适配器 和 存储
-     * @param isSaveData 在 initUI() 和 updateFromDesktop() 指定
-     */
-    private fun refreshAfterUpdate(isSaveData: Boolean = true) {
-        view?.run {
-
-            // Global.loadData(activity!!)
-            // (activity as? MainActivity)?.initData()
-
-            listAdapter?.tipItems = Global.tabs[tabIdx].tips
-
-            // list_tipItem.adapter?.notifyDataSetChanged()
-            list_tipItem.notifyDataSetChanged()
-
-            if (isSaveData)
-                Global.saveData(activity!!)
-        }
-    }
-
-    /**
-     * 项目单击
-     */
     private fun onItemsClick(tipItems: List<TipItem>) {
-        var isHighLight = false
+        // var isHighLight = false
         val contents: MutableList<String> = mutableListOf()
-        tipItems.forEach {
-            contents.add(it.content)
-            if (it.highLight)
-                isHighLight = true
-        }
+        // tipItems.forEach {
+        //     contents.add(it.content)
+        //     if (it.highLight) {
+        //         isHighLight = true
+        //     }
+        // }
 
-        val commands =
-            if (tipItems.size == 1)
-                arrayOf(
-                    "复制",
-                    "编辑",
-                    "删除",
-                    if (isHighLight) "取消高亮" else "高亮",
-                    "分组间移动",
-                    "在浏览器打开",
-                    "关闭"
-                )
-            else
-                arrayOf(
-                    "复制",
-                    "查看",
-                    "删除",
-                    if (isHighLight) "取消高亮" else "高亮",
-                    "分组间移动",
-                    "在浏览器打开",
-                    "关闭"
-                )
+        val commands = if (tipItems.size == 1)
+            arrayOf(
+                "复制", "编辑", "删除",
+                // if (isHighLight) "取消高亮" else "高亮",
+                "分组间移动", "在浏览器打开", "关闭"
+            )
+        else
+            arrayOf(
+                "复制", "查看", "删除",
+                // if (isHighLight) "取消高亮" else "高亮",
+                "分组间移动", "在浏览器打开", "关闭"
+            )
 
-        val title =
-            if (contents.size == 1)
-                contents.first()
-            else
-                "共 ${contents.size} 项：${contents.joinToString(", ")}"
+        val title = if (contents.size == 1)
+            contents.first()
+        else
+            "共 ${contents.size} 项：${contents.joinToString(", ")}"
 
         activity?.showAlert(
             title = title,
             list = commands,
             listener = { dialog, idx ->
-                run {
-                    when (commands[idx]) {
-                        "复制" -> copyTips(tipItems)
-
-                        "编辑" -> modifyTip(tipItems.first())
-                        "查看" -> contentTips(tipItems)
-                        "删除" -> deleteTips(tipItems)
-                        // "高亮" -> highLightTips(tipItems, true)
-                        // "取消高亮" -> highLightTips(tipItems, false)
-                        "分组间移动" -> moveTipsInGroups(tipItems)
-                        "在浏览器打开" -> openBrowserTips(tipItems)
-                        "关闭" -> dialog.dismiss()
-                        else -> {
-                            activity?.showToast("${commands[idx]}: $title")
-                        }
-                    }
+                when (commands[idx]) {
+                    "复制" -> copyTips(tipItems)
+                    "编辑" -> modifyTip(tipItems.first())
+                    "查看" -> contentTips(tipItems)
+                    "删除" -> deleteTips(tipItems)
+                    // "高亮" -> highLightTips(tipItems, true)
+                    // "取消高亮" -> highLightTips(tipItems, false)
+                    "分组间移动" -> moveTipsInGroups(tipItems)
+                    "在浏览器打开" -> openBrowserTips(tipItems)
+                    "关闭" -> dialog.dismiss()
+                    else -> activity?.showToast("不支持的命令 ${commands[idx]}")
                 }
             }
         )
     }
 
-    // endregion 界面更新与交互
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Fun: newTips copyTips modifyTip contentTips deleteTips highLightTips moveTipsInGroups moveUpDownTip selectAll openBrowserTips
-    // region 记录操作
 
     /**
      * 新建
@@ -361,22 +265,15 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
             negText = "取消",
             posText = "添加",
             posClick = { _, _, newText ->
-                run {
-
-                    val trimNewText = newText.trim()
-
-                    // 非空
-                    if (trimNewText.isNotEmpty()) {
-                        val tipItem = TipItem(trimNewText)
-                        if (Global.tabs[tabIdx].tips.add(tipItem)) {
-                            refreshAfterUpdate()
-                            view?.list_tipItem?.scrollToPosition(Global.tabs[tabIdx].tips.size - 1)
-                            activity?.showToast("已创建 \"${tipItem.content}\"")
-                        } else {
-                            activity?.showToast("创建失败 \"${tipItem.content}\"")
-                        }
+                presenter.addTipItem(newText,
+                    onSuccess = {
+                        onRefreshList()
+                        view?.list_view?.scrollToPosition(Global.tabs[tabIdx].tips.size - 1)
+                        activity?.showToast("已创建 $it")
+                    }, onFailed = {
+                        activity?.showToast("创建失败 $it")
                     }
-                }
+                )
             }
         )
     }
@@ -385,54 +282,43 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
      * 复制
      */
     private fun copyTips(tipItems: List<TipItem>) {
-        val contents: MutableList<String> = mutableListOf()
-        tipItems.forEach {
-            contents.add(it.content)
-        }
-        val content = contents.joinToString(", ")
-
-        val cm = context?.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-        val data = ClipData.newPlainText("Label", content)
-        cm?.let {
-            it.primaryClip = data
-            activity?.showToast("已复制 \"$content\"")
-        }
+        presenter.copyTipItems(tipItems, onSuccess = {
+            activity?.showToast("已复制 $it")
+        })
     }
 
     /**
      * 修改
      */
     private fun modifyTip(tipItem: TipItem) {
-        // 初始值
         val preContent = tipItem.content
-
         activity?.showInputDlg(
             title = "编辑记录",
             text = tipItem.content,
             negText = "取消",
             posText = "修改",
             posClick = { _, _, newText ->
-                run {
-
-                    val trimNewText = newText.trim()
-
-                    // 非空，变化
-                    if (trimNewText.isNotEmpty() && preContent != trimNewText) {
-                        tipItem.content = trimNewText
-                        refreshAfterUpdate()
-
+                presenter.updateTipItem(
+                    tipItem, newText,
+                    onSuccess = {
+                        onRefreshList()
                         activity?.showSnackBar(
-                            message = "已修改 \"$preContent\"",
+                            message = "已修改 $preContent",
                             view = view!!,
                             action = "撤销",
                             listener = {
-                                tipItem.content = preContent
-                                refreshAfterUpdate()
-                                activity?.showSnackBar(message = "已撤销修改", view = view!!)
+                                presenter.updateTipItem(tipItem, preContent, onSuccess = {
+                                    onRefreshList()
+                                    activity?.showSnackBar(message = "已撤销修改", view = view!!)
+                                }, onFailed = {
+                                    activity?.showSnackBar(message = "撤销修改错误", view = view!!)
+                                })
                             }
                         )
+                    }, onFailed = {
+                        activity?.showToast("修改标签为 $it 错误")
                     }
-                }
+                )
             }
         )
     }
@@ -458,24 +344,17 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
      * 删除
      */
     private fun deleteTips(tipItems: List<TipItem>) {
-        // 初始位置
-        val tipIndies: MutableList<Int> = mutableListOf()
+        val tipIndies: MutableList<Int> = mutableListOf() // 初始位置
         val contents: MutableList<String> = mutableListOf()
         tipItems.forEach {
             tipIndies.add(Global.tabs[tabIdx].tips.indexOf(it))
             contents.add(it.content)
         }
-        val message =
-            if (contents.size == 1)
-                "确定删除记录 \"${contents.first()}\" 吗？"
-            else
-                "确定删除以下 ${contents.size} 条记录吗？\n\n${contents.joinToString("\n\n")}"
 
-        val message2 =
-            if (contents.size == 1)
-                "已删除 \"${contents.first()}\""
-            else
-                "已删除 ${contents.size} 条记录"
+        val message = if (contents.size == 1)
+            "确定删除记录 ${contents.first()} 吗？"
+        else
+            "确定删除以下 ${contents.size} 条记录吗？\n\n${contents.joinToString("\n\n")}"
 
         activity?.showAlert(
             title = "删除记录",
@@ -483,35 +362,27 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
             negText = "取消",
             posText = "删除",
             posListener = { _, _ ->
-
-                tipItems.forEach { Global.tabs[tabIdx].tips.remove(it) }
-                refreshAfterUpdate()
-                listAdapter?.checkMode = false
-
-                activity?.showSnackBar(
-                    message = message2,
-                    view = view!!,
-                    action = "撤销",
-                    listener = {
-                        for (idx in tipItems.indices) {
-                            try {
-                                Global.tabs[tabIdx].tips.add(tipIndies[idx], tipItems[idx])
-                            } catch (ex: Exception) {
-                                ex.printStackTrace()
-                                Global.tabs[tabIdx].tips.add(tipItems[idx])
-                            }
-                        }
-                        refreshAfterUpdate()
-                        activity?.showSnackBar(message = "已撤销删除", view = view!!)
+                presenter.deleteTipItems(
+                    tipItems,
+                    onSuccess = {
+                        listAdapter?.checkMode = false
+                        onRefreshList()
+                        activity?.showToast(
+                            if (contents.size == 1) "已删除 ${contents.first()}"
+                            else "已删除 ${contents.size} 条记录"
+                        )
+                    }, onFailed = {
+                        listAdapter?.checkMode = false
+                        activity?.showToast("删除标签错误")
                     }
                 )
             }
         )
     }
 
-    /**
-     * 高亮
-     */
+    // /**
+    //  * 高亮
+    //  */
     // private fun highLightTips(tipItems: List<TipItem>, isHighLight: Boolean) {
     //     // 初始值
     //     val flags: MutableList<Boolean> = mutableListOf()
@@ -541,6 +412,78 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
     // }
 
     /**
+     * 上下移
+     */
+    private fun moveUpDownTip(tipItem: TipItem?, isMoveUp: Boolean) {
+        val tips = Global.tabs[tabIdx].tips
+        val update: () -> Unit = {
+            onRefreshList()
+            val allSize: Int = tips.size
+            val pos: Int = tips.indexOf(listAdapter!!.getAllChecked().first())
+            view?.fab_up?.isEnabled = pos != 0
+            view?.fab_down?.isEnabled = pos != allSize - 1
+        }
+        tipItem?.let {
+            if (isMoveUp) {
+                presenter.moveTipItemUp(
+                    tipItem,
+                    onSuccess = { update() }, onFailed = {
+                        activity?.showToast("标签上移错误")
+                    }
+                )
+            } else {
+                presenter.moveTipItemDown(
+                    tipItem,
+                    onSuccess = { update() }, onFailed = {
+                        activity?.showToast("标签下移错误")
+                    }
+                )
+            }
+        }
+    }
+
+    /**
+     * 全选 (MainAct Toolbar)
+     */
+    fun selectAll() {
+        // 多选状态
+        val tips = Global.tabs[tabIdx].tips
+        if (listAdapter?.checkMode != true) {
+            return
+        }
+
+        if (listAdapter?.getAllChecked()?.size != tips.size) {
+            tips.forEach { // 全选
+                listAdapter?.setItemChecked(it, true)
+            }
+        } else {
+            tips.forEach { // 全不选
+                listAdapter?.setItemChecked(it, false)
+            }
+        }
+        view?.list_view?.notifyDataSetChanged()
+    }
+
+    /**
+     * 打开浏览器
+     */
+    private fun openBrowserTips(tipItems: List<TipItem>) {
+        val sp = tipItems.flatMap { it.content.split(" ") }
+        val links = sp.filter { it.startsWith("http://") || it.startsWith("https://") }
+        if (links.isEmpty()) {
+            activity?.showAlert(title = "用浏览器打开", message = "当前项中不包含任何链接。")
+        } else {
+            activity?.showAlert(
+                title = "用浏览器打开",
+                message = "是否打开以下 ${links.size} 个链接：\n\n" + links.joinToString("\n\n"),
+                posText = "打开",
+                posListener = { _, _ -> activity?.openBrowser(links) },
+                negText = "取消"
+            )
+        }
+    }
+
+    /**
      * 分组内移动
      */
     private fun moveTipsInGroups(tipItems: List<TipItem>) {
@@ -559,7 +502,6 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
             title = "移动${if (tipItems.size == 1) " \"${tipItems.first().content}\" " else " ${tipItems.size} 项"}至...",
             list = tabTitles.minus(Global.tabs[tabIdx].title).toTypedArray(),
             listener = { _, idx ->
-
                 val fromIdx = tabIdx
                 val toIdx = tabTitles.indexOf(tabTitles.minus(Global.tabs[tabIdx].title)[idx])
 
@@ -574,9 +516,11 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
                     it.view_pager.adapter?.notifyDataSetChanged()
                     it.view_pager.currentItem = toIdx
 
-                    it.fragments[toIdx].refreshAfterUpdate()
-                    it.fragments[toIdx].list_tipItem?.scrollToPosition(Global.tabs[toIdx].tips.size - 1)
-                    it.fragments[fromIdx].refreshAfterUpdate()
+                    it.fragments[toIdx].onRefreshList()
+                    Global.saveData(activity!!)
+                    it.fragments[toIdx].list_view?.scrollToPosition(Global.tabs[toIdx].tips.size - 1)
+                    it.fragments[fromIdx].onRefreshList()
+                    Global.saveData(activity!!)
 
                     val message = "已移动 " +
                             if (tipItems.size == 1) "\"${tipItems.first().content}\""
@@ -600,8 +544,10 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
                             it.view_pager.adapter?.notifyDataSetChanged()
                             it.view_pager.currentItem = fromIdx
 
-                            it.fragments[fromIdx].refreshAfterUpdate()
-                            it.fragments[toIdx].refreshAfterUpdate()
+                            it.fragments[fromIdx].onRefreshList()
+                            Global.saveData(activity!!)
+                            it.fragments[toIdx].onRefreshList()
+                            Global.saveData(activity!!)
 
                             activity?.showSnackBar(message = "已撤销移动", view = view!!)
                         }
@@ -610,77 +556,4 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
             }
         )
     }
-
-    /**
-     * 上下移
-     */
-    private fun moveUpDownTip(tipItem: TipItem?, isMoveUp: Boolean) {
-        if (tipItem != null) {
-            val currIdx = Global.tabs[tabIdx].tips.indexOf(tipItem)
-            val len = Global.tabs[tabIdx].tips.size
-
-            if (isMoveUp && currIdx == 0) return
-            if (!isMoveUp && currIdx == len - 1) return
-
-            if (isMoveUp) Global.tabs[tabIdx].tips.swap(currIdx, currIdx - 1)
-            else Global.tabs[tabIdx].tips.swap(currIdx, currIdx + 1)
-
-            refreshAfterUpdate()
-
-            // 显示更新
-            val allSize: Int = Global.tabs[tabIdx].tips.size
-            val pos: Int = Global.tabs[tabIdx].tips.indexOf(listAdapter!!.getAllChecked().first())
-
-            view?.fab_up?.isEnabled = pos != 0
-            view?.fab_down?.isEnabled = pos != allSize - 1
-        }
-    }
-
-    /**
-     * 全选 (MainAct Toolbar)
-     */
-    fun selectAll() {
-
-        if (listAdapter?.checkMode == null || !listAdapter?.checkMode!!) return
-        // 多选状态
-
-        if (listAdapter?.getAllChecked()?.size != Global.tabs[tabIdx].tips.size) {
-            // 全选
-            Global.tabs[tabIdx].tips.forEach {
-                listAdapter?.setItemChecked(it, true)
-            }
-        } else {
-            // 全不选
-            Global.tabs[tabIdx].tips.forEach {
-                listAdapter?.setItemChecked(it, false)
-            }
-        }
-        view?.list_tipItem?.notifyDataSetChanged()
-    }
-
-    /**
-     * 打开浏览器
-     */
-    private fun openBrowserTips(tipItems: List<TipItem>) {
-        val sp: MutableList<String> = mutableListOf()
-        tipItems.forEach { sp.addAll(it.content.split(" ")) }
-        val links: MutableList<String> = mutableListOf()
-        for (token in sp) {
-            if (token.startsWith("http://") || token.startsWith("https://"))
-                links.add(token)
-        }
-        if (links.isEmpty()) {
-            activity?.showAlert(title = "用浏览器打开", message = "当前项中不包含任何链接。")
-        } else {
-            activity?.showAlert(
-                title = "用浏览器打开",
-                message = "是否打开以下 ${links.size} 个链接：\n\n" + links.joinToString("\n\n"),
-                posText = "打开",
-                posListener = { _, _ -> activity?.openBrowser(links) },
-                negText = "取消"
-            )
-        }
-    }
-
-    // endregion 记录操作
 }

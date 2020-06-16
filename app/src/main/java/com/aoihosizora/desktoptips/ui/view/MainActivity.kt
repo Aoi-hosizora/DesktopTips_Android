@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
     }
 
     private fun initView() {
-        title = "DesktopTips"
+        title = getString(R.string.act_title)
         supportActionBar?.let {
             tab_layout.elevation = it.elevation
             supportActionBar?.elevation = 0F
@@ -105,6 +105,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
             view_pager.currentItem
         ) as? TabFragment
 
+    /**
+     * 退出多选模式或者 finish()
+     */
     override fun onBackPressed() {
         val hdl: Boolean? = currentFragment?.onKeyBack()
         if (hdl != null && hdl) {
@@ -118,6 +121,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
 
     private var currTabIdx = -1
 
+    /**
+     * TabView 修改 Page
+     */
     fun onPageSelect(position: Int) {
         if (currTabIdx !in fragments.indices) {
             currTabIdx = position
@@ -125,13 +131,16 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
         }
 
         val lastFrag = fragments[currTabIdx]
-        (lastFrag.list_tipItem?.adapter as? TipItemAdapter)?.let {
+        (lastFrag.list_view?.adapter as? TipItemAdapter)?.let {
             it.checkMode = false
         }
         lastFrag.fab?.collapse()
         currTabIdx = position
     }
 
+    /**
+     * 菜单选择
+     */
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item!!.itemId) {
             android.R.id.home -> onBackPressed()
@@ -225,9 +234,6 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
         )
     }
 
-    /**
-     * 检查相机网络权限
-     */
     private fun checkPermission() {
         val requiredPermissions: List<String> = ALL_PERMISSIONS.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
