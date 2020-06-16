@@ -137,4 +137,10 @@ interface IContextHelper {
         val intent = Intent(Intent.ACTION_VIEW, uri)
         startActivity(intent)
     }
+
+    fun Context.openBrowser(urls: List<String>) {
+        for (url in urls) {
+            openBrowser(url)
+        }
+    }
 }

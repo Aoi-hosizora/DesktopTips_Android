@@ -5,13 +5,14 @@ import android.content.Context
 interface MainActivityContract {
 
     interface IView {
-        val presenter: IPresenter
+        val groupPresenter: IGroupPresenter
+        val updatePresenter: IUpdatePresenter
         val context: Context
 
         fun runOnUiThread(action: Runnable)
     }
 
-    interface IPresenter {
+    interface IGroupPresenter {
         val view: IView
 
         /**
@@ -49,5 +50,9 @@ interface MainActivityContract {
             onFailed: (String) -> Unit,
             onDuplicated: (String) -> Unit
         )
+    }
+
+    interface IUpdatePresenter {
+        val view: IView
     }
 }

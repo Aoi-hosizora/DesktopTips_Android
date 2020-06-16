@@ -4,9 +4,9 @@ import com.aoihosizora.desktoptips.global.Global
 import com.aoihosizora.desktoptips.model.Tab
 import com.aoihosizora.desktoptips.ui.contract.MainActivityContract
 
-class MainPresenter(
+class MainActivityGroupPresenter(
     override val view: MainActivityContract.IView
-) : MainActivityContract.IPresenter {
+) : MainActivityContract.IGroupPresenter {
 
     override fun loadData(cb: (Boolean) -> Unit) {
         val ok = Global.loadData(view.context)
