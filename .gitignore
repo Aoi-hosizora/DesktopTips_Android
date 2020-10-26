@@ -1,11 +1,18 @@
+### Editor ###
+.vscode/
+.ionide/
+.history/
+.idea/
+.settings/
+
 *.iml
 .gradle
 /local.properties
 .DS_Store
-/build
 /captures
 .externalNativeBuild
 
-.idea/
-.vscode/
-.settings/
+### Project ###
+build/
+dist/
+

@@ -24,7 +24,7 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
     override val presenter = TabFragmentPresenter(this)
 
     companion object {
-        const val BUNDLE_TAB_IDX = "BUNDLE_TAB_IDX"
+        const val BUNDLE_TAB_INDEX = "BUNDLE_TAB_INDEX"
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -37,6 +37,9 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
         return view
     }
 
+    /**
+     * 加载界面
+     */
     private fun initView(view: View) {
         // srl
         view.srl.setColorSchemeResources(R.color.colorAccent)
@@ -46,17 +49,16 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
         }
 
         // fab
-        view.view_fab_back.setOnClickListener { view.fab.collapse() }
+        view.view_fab_mask.setOnClickListener { view.fab.collapse() }
         view.fab.collapse()
         view.fab.setOnFloatingActionsMenuUpdateListener(object : FloatingActionsMenu.OnFloatingActionsMenuUpdateListener {
             override fun onMenuCollapsed() {
-                view.view_fab_back.visibility = View.GONE
+                view.view_fab_mask.visibility = View.GONE
             }
 
             override fun onMenuExpanded() {
                 if (!listAdapter!!.checkMode) {
-                    // 多选模式不屏蔽蒙版
-                    view.view_fab_back.visibility = View.VISIBLE
+                    view.view_fab_mask.visibility = View.VISIBLE // 多选模式不屏蔽蒙版
                 }
                 onFabMenuExpanded()
             }
@@ -76,6 +78,9 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
         )
     }
 
+    /**
+     * 加载 listener
+     */
     private fun initListener(view: View) {
         // 新建
         view.fab_add.setOnClickListener {
@@ -136,7 +141,7 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
         get() = view?.list_view?.adapter as? TipItemAdapter
 
     override val tabIdx: Int by lazy {
-        arguments!!.getInt(BUNDLE_TAB_IDX, -1)
+        arguments!!.getInt(BUNDLE_TAB_INDEX, -1)
     }
 
     /**
@@ -145,13 +150,13 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
     fun onKeyBack(): Boolean {
         view?.run {
             // 1. Fab 蒙版展开
-            if (fab.isExpanded && view_fab_back.visibility == View.VISIBLE) {
+            if (fab.isExpanded && view_fab_mask.visibility == View.VISIBLE) {
                 fab.collapse()
                 return true
             }
 
             // 2. Fab 非蒙版展开
-            if (fab.isExpanded && view_fab_back.visibility == View.GONE) {
+            if (fab.isExpanded && view_fab_mask.visibility == View.GONE) {
                 fab.collapse()
             }
 
@@ -259,7 +264,7 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
      * 新建
      */
     private fun newTips() {
-        activity?.showInputDlg(
+        activity?.showInputDialog(
             title = "新记录",
             hint = "新记录内容",
             negText = "取消",
@@ -292,7 +297,7 @@ class TabFragment : Fragment(), IContextHelper, TabFragmentContract.IView {
      */
     private fun modifyTip(tipItem: TipItem) {
         val preContent = tipItem.content
-        activity?.showInputDlg(
+        activity?.showInputDialog(
             title = "编辑记录",
             text = tipItem.content,
             negText = "取消",

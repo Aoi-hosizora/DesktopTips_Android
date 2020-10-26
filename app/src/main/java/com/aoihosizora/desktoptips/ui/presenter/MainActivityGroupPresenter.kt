@@ -24,27 +24,33 @@ class MainActivityGroupPresenter(
             onDuplicated(newTitle)
             return
         }
-        if (!Global.tabs.add(Tab(newTitle))) {
+
+        Global.tabs.add(Tab(newTitle))
+        if (!Global.saveData(view.context)) {
             onFailed(newTitle)
             return
         }
 
-        Global.saveData(view.context)
         onSuccess(newTitle)
     }
 
-    override fun deleteTab(index: Int, onSuccess: () -> Unit, onFailed: () -> Unit, onExistContent: (String, Int) -> Unit) {
+    override fun deleteTab(index: Int, onSuccess: () -> Unit, onFailed: () -> Unit, onExisted: (String, Int) -> Unit) {
         if (Global.tabs.size <= index) {
             onFailed()
             return
         }
         val size = Global.tabs[index].tips.size
         if (size != 0) {
-            onExistContent(Global.tabs[index].title, size)
+            onExisted(Global.tabs[index].title, size)
             return
         }
 
         Global.tabs.removeAt(index)
+        if (!Global.saveData(view.context)) {
+            onFailed()
+            return
+        }
+
         onSuccess()
     }
 
@@ -60,7 +66,10 @@ class MainActivityGroupPresenter(
         }
 
         Global.tabs[index].title = newTitle
-        Global.saveData(view.context)
+        if (!Global.saveData(view.context)) {
+            onFailed(newTitle)
+            return
+        }
         onSuccess(newTitle)
     }
 }

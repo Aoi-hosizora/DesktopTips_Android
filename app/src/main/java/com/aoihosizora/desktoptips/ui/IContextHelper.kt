@@ -83,7 +83,7 @@ interface IContextHelper {
             .show()
     }
 
-    fun Context.showInputDlg(
+    fun Context.showInputDialog(
         title: CharSequence, text: CharSequence = "", hint: CharSequence = "", maxLines: Int = 5,
         posText: CharSequence, posClick: (DialogInterface, Int, String) -> Unit,
         negText: CharSequence, negListener: ((DialogInterface, Int) -> Unit)? = null

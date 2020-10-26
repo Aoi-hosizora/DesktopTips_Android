@@ -2,9 +2,9 @@ package com.aoihosizora.desktoptips.ui.presenter
 
 import com.aoihosizora.desktoptips.ui.contract.MainActivityContract
 
-class MainActivityUpdatePresenter(
+class MainActivityNetworkPresenter(
     override val view: MainActivityContract.IView
-) : MainActivityContract.IUpdatePresenter {
+) : MainActivityContract.INetworkPresenter {
 
     companion object {
         // const val QR_CODE_MAGIC = "DESKTOP_TIPS_ANDROID://"

@@ -34,7 +34,7 @@
     </android.support.v4.widget.SwipeRefreshLayout>
 
     <View
-        android:id="@+id/view_fab_back"
+        android:id="@+id/view_fab_mask"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#00FFFFFF"

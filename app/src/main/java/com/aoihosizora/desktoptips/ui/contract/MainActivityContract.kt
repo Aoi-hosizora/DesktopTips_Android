@@ -6,7 +6,7 @@ interface MainActivityContract {
 
     interface IView {
         val groupPresenter: IGroupPresenter
-        val updatePresenter: IUpdatePresenter
+        val networkPresenter: INetworkPresenter
         val context: Context
 
         fun runOnUiThread(action: Runnable)
@@ -37,7 +37,7 @@ interface MainActivityContract {
             index: Int,
             onSuccess: () -> Unit,
             onFailed: () -> Unit,
-            onExistContent: (String, Int) -> Unit
+            onExisted: (String, Int) -> Unit
         )
 
         /**
@@ -52,7 +52,7 @@ interface MainActivityContract {
         )
     }
 
-    interface IUpdatePresenter {
+    interface INetworkPresenter {
         val view: IView
     }
 }

@@ -18,19 +18,20 @@ import com.aoihosizora.desktoptips.ui.adapter.TabPageAdapter
 import com.aoihosizora.desktoptips.ui.adapter.TipItemAdapter
 import com.aoihosizora.desktoptips.ui.contract.MainActivityContract
 import com.aoihosizora.desktoptips.ui.presenter.MainActivityGroupPresenter
-import com.aoihosizora.desktoptips.ui.presenter.MainActivityUpdatePresenter
+import com.aoihosizora.desktoptips.ui.presenter.MainActivityNetworkPresenter
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_tab.*
 
 class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.IView {
 
     override val groupPresenter = MainActivityGroupPresenter(this)
-    override val updatePresenter = MainActivityUpdatePresenter(this)
+    override val networkPresenter = MainActivityNetworkPresenter(this)
     override val context: Context = this
 
     companion object {
         val ALL_PERMISSIONS = listOf(
-            Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.CAMERA,
             Manifest.permission.INTERNET
         )
@@ -45,6 +46,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
         initData() // with initUI
     }
 
+    /**
+     * 加载数据，如果成功则加载界面
+     */
     private fun initData() {
         val progressDlg = showProgress(this, "加载数据中", false)
         groupPresenter.loadData { ok ->
@@ -62,6 +66,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
         }
     }
 
+    /**
+     * 加载界面（数据已经成功加载）
+     */
     private fun initView() {
         title = getString(R.string.act_title)
         supportActionBar?.let {
@@ -82,6 +89,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
 
     var menu: Menu? = null
 
+    /**
+     * 创建菜单
+     */
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         this.menu = menu
         menuInflater.inflate(R.menu.menu_main, menu)
@@ -99,6 +109,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
             return ret.toList()
         }
 
+    /**
+     * 当前 Tab Fragment
+     */
     private val currentFragment: TabFragment?
         get() = view_pager.adapter?.instantiateItem(
             view_pager,
@@ -106,7 +119,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
         ) as? TabFragment
 
     /**
-     * 退出多选模式或者 finish()
+     * 退出随便中的模式，否则 finish
      */
     override fun onBackPressed() {
         val hdl: Boolean? = currentFragment?.onKeyBack()
@@ -117,6 +130,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////// 菜单功能相关 ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private var currTabIdx = -1
@@ -155,12 +169,11 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
         return super.onOptionsItemSelected(item)
     }
 
-
     /**
      * 新建分组
      */
     private fun addTab() {
-        showInputDlg(
+        showInputDialog(
             title = "新分组",
             hint = "新分组标题",
             negText = "取消",
@@ -202,7 +215,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
                     }
                 }, onFailed = {
                     showToast("分组 ${Global.tabs[index].title} 删除失败")
-                }, onExistContent = { title, size ->
+                }, onExisted = { title, size ->
                     showAlert(
                         title = "删除分组",
                         message = "分组 $title 还有 $size 条记录，请先移动后再删除。"
@@ -216,7 +229,7 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
      * 重命名分组
      */
     private fun renameTab() {
-        showInputDlg(
+        showInputDialog(
             title = "重命名分组",
             text = Global.tabs[view_pager.currentItem].title,
             negText = "取消",
@@ -234,8 +247,11 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
         )
     }
 
+    /**
+     * 检查权限
+     */
     private fun checkPermission() {
-        val requiredPermissions: List<String> = ALL_PERMISSIONS.filter {
+        val requiredPermissions = ALL_PERMISSIONS.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
         if (requiredPermissions.isNotEmpty()) {
@@ -248,6 +264,9 @@ class MainActivity : AppCompatActivity(), IContextHelper, MainActivityContract.I
         }
     }
 
+    /**
+     * 检查权限回调
+     */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_PERMISSION_CODE) {

@@ -96,7 +96,7 @@ object Global {
     /**
      * check tipColor order
      */
-    fun handleWithColorOrder(colors: List<TipColor>, tabs: List<Tab>) {
+    private fun handleWithColorOrder(colors: List<TipColor>, tabs: List<Tab>) {
         val colorList = colors.sortedBy { it.id }
         for (i in colorList.indices) {
             val color = colorList[i]
