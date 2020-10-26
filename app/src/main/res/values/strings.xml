@@ -1,15 +1,3 @@
 <resources>
-
     <string name="app_name">DesktopTips</string>
-    <string name="act_title">@string/app_name</string>
-
-    <!-- Menu -->
-    <string name="menu_add_tab">添加分组</string>
-    <string name="menu_delete_tab">删除分组</string>
-    <string name="menu_rename_tab">重命名分组</string>
-    <string name="menu_select_all">全选</string>
-    <string name="menu_update">同步</string>
-
-    <string name="empty_view">无内容</string>
-
 </resources>

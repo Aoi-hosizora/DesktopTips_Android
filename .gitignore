@@ -11,6 +11,7 @@
 .DS_Store
 /captures
 .externalNativeBuild
+.cxx
 
 ### Project ###
 build/
