@@ -1,5 +1,6 @@
 # DesktopTips_Android
 
++ Bug in project, refactoring...
 + Android version of windows [DesktopTips](https://github.com/Aoi-hosizora/DesktopTips) tool
 + Main for data transmission (use socket in LAN) between desktop version
 

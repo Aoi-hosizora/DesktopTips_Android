@@ -1,5 +1,6 @@
 package com.aoihosizora.desktoptips.model
 
+import com.aoihosizora.desktoptips.global.Global
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class TipItem(

@@ -24,7 +24,7 @@
         android:visibility="visible">
 
         <com.aoihosizora.desktoptips.ui.widget.RecyclerViewEmptySupport
-            android:id="@+id/list_tipItem"
+            android:id="@+id/list_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
 
@@ -34,7 +34,7 @@
     </android.support.v4.widget.SwipeRefreshLayout>
 
     <View
-        android:id="@+id/view_fab_back"
+        android:id="@+id/view_fab_mask"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#00FFFFFF"
