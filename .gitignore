@@ -16,4 +16,5 @@
 ### Project ###
 build/
 dist/
-
+.project
+.classpath
